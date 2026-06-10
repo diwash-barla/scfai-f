@@ -16,9 +16,5 @@ COPY index.html .
 # पोर्ट 5000 एक्सपोज़ करें (जिस पर हमारा ऐप चलेगा)
 EXPOSE 5000
 
-# API Keys के लिए एनवायरनमेंट वेरिएबल्स सेट करें (इन्हें रन करते समय पास करना होगा)
-ENV PEXELS_API_KEY=""
-ENV PIXABAY_API_KEY=""
-
 # प्रोडक्शन के लिए Gunicorn का इस्तेमाल करके ऐप को रन करें
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
