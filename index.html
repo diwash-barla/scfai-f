@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockClip Finder AI</title>
+    <style>
+        /* Pure CSS Architecture */
+        :root {
+            --bg-color: #0b0f19;
+            --surface-color: rgba(26, 32, 53, 0.6);
+            --surface-hover: rgba(36, 44, 71, 0.8);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary: #4f46e5;
+            --primary-hover: #6366f1;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-attachment: fixed;
+        }
+
+        header {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #818cf8, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 40px;
+            padding: 0 20px;
+        }
+
+        .glass-panel {
+            background: var(--surface-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 250px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        select {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+        }
+        
+        select option {
+            background: var(--bg-color);
+            color: white;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px var(--primary);
+        }
+
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading Experience UI */
+        .progress-overlay {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .progress-text {
+            font-size: 1.2rem;
+            color: var(--accent);
+            font-weight: 500;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Results Grid */
+        .results-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+            width: 100%;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        /* Video Card UI */
+        .card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .media-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9; /* Default, overridden via JS for portrait */
+            background: #000;
+            overflow: hidden;
+        }
+
+        .media-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.3s;
+        }
+
+        .badge-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            z-index: 2;
+        }
+
+        .badge {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .badge.quality { color: #facc15; border-color: rgba(250, 204, 21, 0.3); }
+        .badge.score { color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
+
+        .card-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .ai-query {
+            background: rgba(79, 70, 229, 0.1);
+            color: #818cf8;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn-outline, .btn-primary {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: white;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .error-message {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .input-group { flex-direction: column; }
+            select, input[type="text"], button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>StockClip Finder AI</h1>
+        <p class="subtitle">Discover the absolute best stock footage using AI-powered query expansion, intelligent filtering, and diversity selection.</p>
+    </header>
+
+    <div class="search-container">
+        <div class="glass-panel">
+            <div class="error-message" id="errorBox"></div>
+            <form id="searchForm" class="input-group">
+                <input type="text" id="queryInput" placeholder="Describe the scene (e.g., Ancient hidden temple)..." required>
+                
+                <select id="orientationSelect">
+                    <option value="landscape">Landscape (16:9)</option>
+                    <option value="portrait">Portrait (9:16)</option>
+                </select>
+
+                <select id="qualitySelect">
+                    <option value="any">Any Quality</option>
+                    <option value="720">720p+</option>
+                    <option value="1080" selected>1080p+</option>
+                    <option value="4k">4K Only</option>
+                </select>
+
+                <button type="submit" id="searchBtn">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    Search AI
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading State UI -->
+    <div class="progress-overlay" id="progressOverlay">
+        <div class="spinner"></div>
+        <div class="progress-text" id="progressText">Initializing AI Engine...</div>
+    </div>
+
+    <!-- Results Display -->
+    <div class="results-container">
+        <div class="grid" id="resultsGrid"></div>
+    </div>
+
+    <script>
+        // Vanilla JavaScript - Architecture: Loose coupling with Backend
+        const form = document.getElementById('searchForm');
+        const progressOverlay = document.getElementById('progressOverlay');
+        const progressText = document.getElementById('progressText');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const searchBtn = document.getElementById('searchBtn');
+        const errorBox = document.getElementById('errorBox');
+
+        // Dynamic Progress States for UX
+        const loadingStates = [
+            "Expanding AI queries for semantic diversity...",
+            "Searching Pexels infrastructure...",
+            "Searching Pixabay infrastructure...",
+            "Filtering strict aspect ratios...",
+            "Analyzing visual quality and resolutions...",
+            "Removing duplicate clips...",
+            "Applying intelligent scoring algorithm...",
+            "Enforcing visual diversity constraints...",
+            "Preparing final premium results..."
+        ];
+
+        let progressInterval;
+
+        function startProgressAnimation() {
+            progressOverlay.style.display = 'flex';
+            resultsGrid.innerHTML = '';
+            errorBox.style.display = 'none';
+            searchBtn.disabled = true;
+            
+            let stateIndex = 0;
+            progressText.innerText = loadingStates[0];
+            
+            // Cycle through texts every 800ms
+            progressInterval = setInterval(() => {
+                stateIndex++;
+                if (stateIndex < loadingStates.length) {
+                    progressText.innerText = loadingStates[stateIndex];
+                }
+            }, 800);
+        }
+
+        function stopProgressAnimation() {
+            clearInterval(progressInterval);
+            progressOverlay.style.display = 'none';
+            searchBtn.disabled = false;
+        }
+
+        function showError(message) {
+            errorBox.innerText = message;
+            errorBox.style.display = 'block';
+        }
+
+        // Card Component Generator
+        function createVideoCard(clip, orientation) {
+            const aspectStyle = orientation === 'portrait' ? 'aspect-ratio: 9/16;' : 'aspect-ratio: 16/9;';
+            
+            return `
+                <div class="card">
+                    <div class="media-container" style="${aspectStyle}">
+                        <video 
+                            src="${clip.download_url}" 
+                            poster="${clip.thumbnail}" 
+                            muted loop 
+                            onmouseover="this.play()" 
+                            onmouseout="this.pause()"
+                            playsinline>
+                        </video>
+                        <div class="badge-container">
+                            <span class="badge quality">${clip.quality_label}</span>
+                            <span class="badge">${clip.duration}s</span>
+                            <span class="badge">${clip.source}</span>
+                            <span class="badge score">Score: ${clip.score}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-meta">
+                            <span>Res: ${clip.aspect_ratio}</span>
+                            <span>View: ${clip.views > 0 ? clip.views : 'N/A'}</span>
+                        </div>
+                        <div class="ai-query">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            AI Query: "${clip.query_used}"
+                        </div>
+                        <div class="card-actions">
+                            <a href="${clip.url}" target="_blank" class="btn-outline">Source</a>
+                            <a href="${clip.download_url}" target="_blank" download class="btn-primary">Download</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Form Submit Handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const query = document.getElementById('queryInput').value;
+            const orientation = document.getElementById('orientationSelect').value;
+            const quality = document.getElementById('qualitySelect').value;
+
+            startProgressAnimation();
+
+            try {
+                // Call clean JSON API
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, orientation, quality })
+                });
+
+                const data = await response.json();
+
+                stopProgressAnimation();
+
+                if (!data.success) {
+                    showError(data.error || 'Failed to fetch results.');
+                    return;
+                }
+
+                if (data.clips.length === 0) {
+                    showError('No high-quality clips found matching your strict criteria. Try a broader search or lower quality requirement.');
+                    return;
+                }
+
+                // Render Results
+                data.clips.forEach(clip => {
+                    resultsGrid.insertAdjacentHTML('beforeend', createVideoCard(clip, orientation));
+                });
+
+            } catch (error) {
+                stopProgressAnimation();
+                showError('Network error. Please make sure the server is running and API keys are set.');
+                console.error('Fetch error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
