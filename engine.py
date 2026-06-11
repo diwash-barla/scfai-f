@@ -8,6 +8,7 @@ import re
 import requests
 import cv2
 import threading
+import gc  # 🔥 NEW: Garbage Collector for Memory Management
 from PIL import Image
 from io import BytesIO
 from typing import List, Dict, Any
@@ -17,8 +18,8 @@ from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V10 (THE ARCHITECT LEVEL)
-    Includes: Isolated Pipelines, Vision AI, and Thread-Safe Global Unique Registry.
+    🔥 StockClip Finder AI - Engine V11 (THE MEMORY OPTIMIZED ARCHITECT)
+    Includes: Auto RAM Cleanup, Cache Limits, Isolated Pipelines, and Global Lock.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str, groq_key: str = ""):
@@ -28,6 +29,8 @@ class StockEngine:
         self.max_results = 12
         
         self.embedding_cache = {}
+        self.MAX_CACHE_SIZE = 5000 # 🔥 RAM बचाने के लिए लिमिट
+        
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
@@ -44,7 +47,7 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V10 (Global Registry Locked) ready!")
+        print("✅ Engine V11 (Memory Leak Fixed) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
@@ -146,7 +149,7 @@ class StockEngine:
                     ret, _ = cap.read()
                     if not ret: break
                 ret, frame = cap.read()
-                cap.release()
+                cap.release() # 🔥 Video connection closed here
                 if ret:
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     img = Image.fromarray(frame_rgb)
@@ -192,6 +195,14 @@ class StockEngine:
             
         all_scored_clips = [item[0] for item in valid_clips] + failed_clips
         all_scored_clips.sort(key=lambda x: x['score'], reverse=True)
+
+        # 🔥 INSTANT MEMORY CLEANUP
+        # ये भारी-भरकम इमेजेज और वेक्टर्स को तुरंत रैम से उड़ा देगा!
+        del images
+        del img_embeddings
+        del txt_embedding
+        gc.collect()
+
         return all_scored_clips
 
     # =====================================================
@@ -207,32 +218,27 @@ class StockEngine:
         scored_pex = self._faiss_semantic_score(filtered_pex, q) if filtered_pex else []
         scored_pix = self._faiss_semantic_score(filtered_pix, q) if filtered_pix else []
 
-        # FAISS के टॉप 5 निकालेंगे
         top_pex_candidates = scored_pex[:5]
         top_pix_candidates = scored_pix[:5]
 
-        # Vision AI इन 5 को परखेगा
         vision_pex = self._vision_score_candidates(full_context, top_pex_candidates) if top_pex_candidates else []
         vision_pix = self._vision_score_candidates(full_context, top_pix_candidates) if top_pix_candidates else []
 
         track_winners = []
 
-        # 🔒 THE FIX: Thread-Safe Selection (तुम्हारी सोच का कोड)
-        # Pexels विनर चुनें
         if vision_pex:
             with seen_lock:
                 for vp in vision_pex:
                     if vp['id'] not in global_seen_ids:
-                        global_seen_ids.add(vp['id']) # लॉक कर दिया!
+                        global_seen_ids.add(vp['id']) 
                         track_winners.append(vp)
                         break
 
-        # Pixabay विनर चुनें
         if vision_pix:
             with seen_lock:
                 for vp in vision_pix:
                     if vp['id'] not in global_seen_ids:
-                        global_seen_ids.add(vp['id']) # लॉक कर दिया!
+                        global_seen_ids.add(vp['id']) 
                         track_winners.append(vp)
                         break
 
@@ -249,20 +255,16 @@ class StockEngine:
         queries_to_run = self._expand_query(query) 
         all_final_winners = []
         
-        # 🛡️ THE GLOBAL REGISTRY
         global_seen_ids = set()
         seen_lock = threading.Lock()
 
-        # सभी 6 क्वेरीज को एक साथ दौड़ाएं
         with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
             futures = [ex.submit(self._process_single_query_track, q, orientation, quality, full_context, global_seen_ids, seen_lock) for q in queries_to_run]
             for f in concurrent.futures.as_completed(futures):
                 all_final_winners.extend(f.result())
 
-        # सीन डिटेक्ट करें
         final_results = self._detect_scenes(all_final_winners)
 
-        # Vector डेटा साफ़ करें
         for c in final_results:
             c.pop("vector", None)
 
@@ -350,6 +352,12 @@ class StockEngine:
         return out
 
     def _get_embeddings_batch(self, texts: List[str]) -> np.ndarray:
+        # 🔥 NEW: RAM Saver - Empty cache if it grows too big
+        if len(self.embedding_cache) > self.MAX_CACHE_SIZE:
+            print("🧹 Cache full! Clearing embeddings to save RAM...")
+            self.embedding_cache.clear()
+            gc.collect()
+
         embeddings, texts_to_compute, indices_to_compute = [], [], []
         for i, text in enumerate(texts):
             if text in self.embedding_cache:
