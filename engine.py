@@ -198,51 +198,61 @@ class StockEngine:
         return all_scored_clips
 
     # =====================================================
-    # SCRIPT-TO-FOOTAGE PIPELINE (AUTO-PILOT)
+    # 🛤️ THE ISOLATED TRACK PIPELINE (तुम्हारी सोच वाला लॉजिक)
     # =====================================================
-    def generate_video_timeline(self, script: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
-        raw_scenes = re.split(r'[.।|\n]+', script)
-        scenes = [s.strip() for s in raw_scenes if len(s.strip()) > 15] 
-        
-        timeline = []
-        for scene_text in scenes[:6]:
-            full_en_text, search_query = self._extract_visual_keywords(scene_text)
-            candidates = self.execute_search(query=search_query, orientation=orientation, quality=quality, full_context=full_en_text)
-            
-            timeline.append({
-                "scene_text": scene_text,
-                "clip": candidates[0] if candidates else None
-            })
-            
-        return timeline
+    def _process_single_query_track(self, q: str, orientation: str, quality: str) -> List[Dict]:
+        """हर कीवर्ड की अपनी 'अग्निपरीक्षा'। यह सिर्फ इस कीवर्ड के लिए 1 Pexels और 1 Pixabay विनर निकालेगा।"""
+        raw_pex = self._fetch_pexels(q, orientation)
+        raw_pix = self._fetch_pixabay(q, orientation)
+
+        filtered_pex = self._filter(raw_pex, orientation, quality)
+        filtered_pix = self._filter(raw_pix, orientation, quality)
+
+        # FAISS Scoring सिर्फ इसी 'q' (कीवर्ड) के लिए
+        scored_pex = self._faiss_semantic_score(filtered_pex, q) if filtered_pex else []
+        scored_pix = self._faiss_semantic_score(filtered_pix, q) if filtered_pix else []
+
+        track_winners = []
+        if scored_pex: track_winners.append(scored_pex[0]) # Pexels का विनर
+        if scored_pix: track_winners.append(scored_pix[0]) # Pixabay का विनर
+
+        return track_winners
 
     # =====================================================
-    # MAIN SEARCH PIPELINE
+    # MAIN SEARCH PIPELINE (NO KHICHDI 🍲🚫)
     # =====================================================
     def execute_search(self, query: str, orientation: str, quality: str, full_context: str = None) -> List[Dict[str, Any]]:
         if not full_context:
             try: full_context = GoogleTranslator(source='auto', target='en').translate(query)
             except: full_context = query
                 
-        expanded = self._expand_query(query) # Using Groq now!
-        raw = self._fetch_all(expanded, orientation)
+        # Groq से 6 क्वेरीज मिलेंगी
+        expanded = self._expand_query(query) 
+        queries_to_run = expanded["pexels"] # Pexels और Pixabay दोनों के लिए लिस्ट सेम ही है
+        
+        all_track_winners = []
 
-        filtered = self._filter(raw, orientation, quality)
-        deduped = self._deduplicate(filtered)
+        # 1. सभी 6 रास्तों (Tracks) को एक साथ दौड़ाएं
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+            futures = [ex.submit(self._process_single_query_track, q, orientation, quality) for q in queries_to_run]
+            for f in concurrent.futures.as_completed(futures):
+                all_track_winners.extend(f.result())
+
+        deduped = self._deduplicate(all_track_winners)
         
         if not deduped: return []
 
-        scored_text = self._faiss_semantic_score(deduped, query)
+        # 2. 👁️ द फाइनल बॉस: Vision AI Verification
+        # 6 कीवर्ड्स x 2 प्लेटफॉर्म्स = 12 विनर्स। अब CLIP इन 12 को अपनी आँखों से परखेगा।
+        vision_verified = self._batch_vision_score(target_english_text=full_context, clips=deduped)
         
-        top_candidates = scored_text[:24]
-        vision_verified = self._batch_vision_score(target_english_text=full_context, clips=top_candidates)
-        
-        processed = self._detect_scenes(vision_verified)
-        final_results = self._kmeans_diversity(processed)
+        # 3. सीन डिटेक्शन (Drone/Macro आदि)
+        final_results = self._detect_scenes(vision_verified)
 
         for c in final_results:
             c.pop("vector", None)
 
+        # टॉप 12 रिटर्न कर दें (अब KMeans की कोई ज़रूरत नहीं!)
         return final_results[:self.max_results]
 
     # =====================================================
