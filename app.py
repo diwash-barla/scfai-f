@@ -10,11 +10,12 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__, static_folder='.', static_url_path='')
 
-# Initialize the V3 Engine
+# Initialize the V8 Engine
 pexels_key = os.environ.get("PEXELS_API_KEY", "")
 pixabay_key = os.environ.get("PIXABAY_API_KEY", "")
+groq_key = os.environ.get("GROQ_API_KEY", "") # NEW: Groq API Key
 
-stock_engine = StockEngine(pexels_key=pexels_key, pixabay_key=pixabay_key)
+stock_engine = StockEngine(pexels_key=pexels_key, pixabay_key=pixabay_key, groq_key=groq_key)
 
 @app.route('/', methods=['GET'])
 def serve_frontend():
@@ -69,5 +70,5 @@ def timeline_api():
         return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
-    print("Starting StockClip Finder AI Server (V3 + AutoPilot)...")
+    print("Starting StockClip Finder AI Server (V8 + Groq)...")
     app.run(host='0.0.0.0', port=7860, debug=False)
