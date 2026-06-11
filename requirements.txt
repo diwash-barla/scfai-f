@@ -8,3 +8,4 @@ numpy
 deep-translator
 Pillow
 requests
+opencv-python-headless
