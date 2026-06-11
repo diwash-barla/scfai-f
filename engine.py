@@ -103,7 +103,7 @@ class StockEngine:
                     "Content-Type": "application/json"
                 }
                 payload = {
-                    "model": "llama3-8b-8192", # Blazing fast
+                    "model": "meta-llama/llama-4-scout-17b-16e-instruct", # Blazing fast
                     "messages": [
                         {"role": "system", "content": "You are an expert stock footage researcher. Given a visual scene, generate exactly 5 highly distinct, optimized search queries (2-4 words each) to find stock footage on Pexels/Pixabay. Return ONLY a comma-separated list of the 5 queries. No numbers, no intro."},
                         {"role": "user", "content": f"Scene: {q}"}
