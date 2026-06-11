@@ -46,7 +46,7 @@ class StockEngine:
     # NLP KEYWORD EXTRACTOR (THE MAGIC FIX 🔥)
     # =====================================================
     def _extract_visual_keywords(self, scene_text: str) -> str:
-        """Translates Hindi/Multilingual text to English and extracts pure visual keywords."""
+        """Translates Hindi/Multilingual text to English and extracts pure visual NOUNS."""
         try:
             # 1. Auto-Translate to English
             en_text = GoogleTranslator(source='auto', target='en').translate(scene_text)
@@ -58,26 +58,38 @@ class StockEngine:
         clean_text = re.sub(r'[^\w\s]', '', en_text.lower())
         words = clean_text.split()
         
-        # 3. Remove non-visual grammar words (Stopwords)
+        # 3. Aggressive Stopwords (Grammar + Action Verbs that confuse image APIs)
         stop_words = {
-            "imagine", "that", "you", "are", "standing", "in", "the", "middle", "of", 
-            "and", "as", "soon", "go", "inside", "see", "a", "to", "it", "out", 
-            "your", "eyes", "suddenly", "there", "is", "with", "on", "at", "by", 
-            "for", "from", "an", "was", "were", "will", "we", "they", "he", "she",
-            "reach", "touch", "start", "starts", "can", "could", "would", "about"
+            # Grammar
+            "imagine", "that", "you", "are", "in", "the", "middle", "of", "and", "as", "soon",
+            "a", "to", "it", "out", "your", "there", "is", "with", "on", "at", "by", "for", 
+            "from", "an", "was", "were", "will", "we", "they", "he", "she", "this", "these",
+            
+            # Action verbs that ruin visual search (The real culprits!)
+            "run", "running", "go", "going", "walk", "walking", "stand", "standing", 
+            "look", "looking", "see", "seeing", "reach", "reaching", "touch", "touching",
+            "start", "starts", "find", "finding", "appear", "appears", "disappear",
+            "feel", "feeling", "gather", "gathers", "begin", "begins", "blinds", "blind",
+            
+            # Adverbs / Prepositions
+            "towards", "away", "suddenly", "then", "now", "here", "inside", "outside",
+            "up", "down", "left", "right", "front", "back", "can", "could", "would", "about"
         }
         
         # 4. Filter words
         keywords = [w for w in words if w not in stop_words and len(w) > 2]
         
-        # 5. Build final query (Take up to 4 words for maximum API accuracy)
-        final_query = " ".join(keywords[:4])
+        # 5. VITAL FIX: English puts the most important nouns at the END of the sentence usually.
+        # e.g., "you run towards an old broken building" -> we want "old broken building"
+        # Taking the LAST 4 valid words instead of the first 4.
+        final_query = " ".join(keywords[-4:])
         
         # Fallback if everything was filtered out
         if not final_query.strip():
-            final_query = "cinematic mysterious landscape"
+            final_query = "mysterious cinematic landscape"
             
-        print(f"🧠 [AI Translator] Extracted Query -> '{final_query}'")
+        print(f"🧠 [AI Translator] Original EN: '{en_text}'")
+        print(f"🧠 [AI Translator] Extracted Target -> '{final_query}'")
         return final_query
 
     # =====================================================
