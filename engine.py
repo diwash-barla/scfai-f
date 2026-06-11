@@ -5,16 +5,19 @@ import concurrent.futures
 import hashlib
 import numpy as np
 import re
+import requests
+from PIL import Image
+from io import BytesIO
 from typing import List, Dict, Any
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 import faiss
 from sklearn.cluster import KMeans
 from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V3.1 (Autonomous Ready + Keyword Extraction)
-    Includes: FAISS, KMeans, Cache, Scene Detection, and True Cross-lingual Script-to-Footage.
+    🔥 StockClip Finder AI - Engine V4 (EXTREME LEVEL - Multimodal Vision AI)
+    Includes: Text FAISS + CLIP Image Re-ranking + Keyword Extraction + Scene Detection.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str):
@@ -27,9 +30,12 @@ class StockEngine:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
 
-        print("🚀 Loading AI Model (V3.1 faiss-optimized)...")
-        # Multilingual model supports both Hindi and English for semantic mapping
+        print("🚀 Loading Text AI Model (FAISS)...")
         self.model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+        
+        print("👁️ Loading Vision AI Model (CLIP)... This might take a minute.")
+        # CLIP Model: यह इमेजेस और टेक्स्ट दोनों को समझ सकता है!
+        self.clip_model = SentenceTransformer("clip-ViT-B-32")
         
         self.scene_anchors = {
             "Drone/Aerial": self.model.encode("aerial drone bird eye view flying above", convert_to_tensor=False),
@@ -37,60 +43,94 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V3.1 ready!")
+        print("✅ Engine V4 (Multimodal) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
 
     # =====================================================
-    # NLP KEYWORD EXTRACTOR (THE MAGIC FIX 🔥)
+    # NLP KEYWORD EXTRACTOR
     # =====================================================
-    def _extract_visual_keywords(self, scene_text: str) -> str:
-        """Translates Hindi/Multilingual text to English and extracts pure visual NOUNS."""
+    def _extract_visual_keywords(self, scene_text: str) -> tuple:
+        """Returns both the raw english translation (for CLIP) and the visual query (for Pexels)."""
         try:
-            # 1. Auto-Translate to English
             en_text = GoogleTranslator(source='auto', target='en').translate(scene_text)
-        except Exception as e:
-            print(f"Translation error: {e}")
+        except Exception:
             en_text = scene_text
         
-        # 2. Clean punctuation
         clean_text = re.sub(r'[^\w\s]', '', en_text.lower())
         words = clean_text.split()
         
-        # 3. Aggressive Stopwords (Grammar + Action Verbs that confuse image APIs)
         stop_words = {
-            # Grammar
             "imagine", "that", "you", "are", "in", "the", "middle", "of", "and", "as", "soon",
             "a", "to", "it", "out", "your", "there", "is", "with", "on", "at", "by", "for", 
             "from", "an", "was", "were", "will", "we", "they", "he", "she", "this", "these",
-            
-            # Action verbs that ruin visual search (The real culprits!)
             "run", "running", "go", "going", "walk", "walking", "stand", "standing", 
             "look", "looking", "see", "seeing", "reach", "reaching", "touch", "touching",
             "start", "starts", "find", "finding", "appear", "appears", "disappear",
             "feel", "feeling", "gather", "gathers", "begin", "begins", "blinds", "blind",
-            
-            # Adverbs / Prepositions
             "towards", "away", "suddenly", "then", "now", "here", "inside", "outside",
             "up", "down", "left", "right", "front", "back", "can", "could", "would", "about"
         }
         
-        # 4. Filter words
         keywords = [w for w in words if w not in stop_words and len(w) > 2]
-        
-        # 5. VITAL FIX: English puts the most important nouns at the END of the sentence usually.
-        # e.g., "you run towards an old broken building" -> we want "old broken building"
-        # Taking the LAST 4 valid words instead of the first 4.
         final_query = " ".join(keywords[-4:])
         
-        # Fallback if everything was filtered out
         if not final_query.strip():
             final_query = "mysterious cinematic landscape"
             
-        print(f"🧠 [AI Translator] Original EN: '{en_text}'")
-        print(f"🧠 [AI Translator] Extracted Target -> '{final_query}'")
-        return final_query
+        return en_text, final_query
+
+    # =====================================================
+    # 👁️ CLIP MULTIMODAL RE-RANKER (EXTREME LEVEL)
+    # =====================================================
+    def _clip_visual_rerank(self, target_english_text: str, clips: List[Dict]) -> Dict:
+        """
+        Downloads thumbnails and uses the CLIP Vision model to physically 'look' 
+        at the images and match them against the script.
+        """
+        if not clips: return None
+        
+        valid_clips = []
+        images = []
+        
+        # Helper function to download images in parallel
+        def fetch_img(c):
+            try:
+                res = requests.get(c['thumbnail'], timeout=3)
+                img = Image.open(BytesIO(res.content)).convert("RGB")
+                return c, img
+            except Exception:
+                return None, None
+
+        # Download thumbnails for the top 8 text-matched candidates
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+            results = ex.map(fetch_img, clips[:8])
+            
+        for c, img in results:
+            if img is not None:
+                valid_clips.append(c)
+                images.append(img)
+                
+        if not valid_clips:
+            return clips[0] # Fallback if all images fail to download
+            
+        # 🚀 THE MAGIC: Generate AI Vectors for Images and Text
+        img_embeddings = self.clip_model.encode(images, convert_to_tensor=True)
+        txt_embedding = self.clip_model.encode([target_english_text], convert_to_tensor=True)
+        
+        # Calculate Cosine Similarity (How much the image actually looks like the text)
+        sims = util.cos_sim(txt_embedding, img_embeddings)[0].cpu().tolist()
+        
+        for i, c in enumerate(valid_clips):
+            c['visual_score'] = round(sims[i] * 100, 2)
+            # Update UI Quality Label to show the true Vision AI Score
+            c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | 👁️ Vision: {c['visual_score']}%"
+            
+        # Sort by the CLIP Visual Score (Highest visual match wins)
+        valid_clips.sort(key=lambda x: x['visual_score'], reverse=True)
+        
+        return valid_clips[0]
 
     # =====================================================
     # SCRIPT-TO-FOOTAGE PIPELINE
@@ -102,15 +142,16 @@ class StockEngine:
         timeline = []
         
         for scene_text in scenes[:6]:
-            # 🔥 Using the new Extractor instead of raw slicing
-            search_query = self._extract_visual_keywords(scene_text)
+            full_en_text, search_query = self._extract_visual_keywords(scene_text)
             
-            clips = self.execute_search(query=search_query, orientation=orientation, quality=quality)
+            # Stage 1: Text-based Candidate Retrieval (Fast)
+            candidates = self.execute_search(query=search_query, orientation=orientation, quality=quality)
             
             best_clip = None
-            if clips:
-                # FAISS and KMeans already sorted the clips. The 0th index is the absolute centroid best.
-                best_clip = clips[0] 
+            if candidates:
+                # Stage 2: Multimodal Visual Re-ranking (Extreme Level)
+                # Here, CLIP looks at the actual thumbnails to pick the absolute best from the candidates!
+                best_clip = self._clip_visual_rerank(full_en_text, candidates)
                 
             timeline.append({
                 "scene_text": scene_text,
@@ -135,7 +176,6 @@ class StockEngine:
         processed = self._detect_scenes(scored)
         final_results = self._kmeans_diversity(processed)
 
-        # 🛑 CRITICAL FIX: Ensure no numpy arrays leak into the JSON response!
         for c in final_results:
             c.pop("vector", None)
 
@@ -310,3 +350,4 @@ class StockEngine:
                 
         final_selection.sort(key=lambda x: x["score"], reverse=True)
         return final_selection
+        
