@@ -17,13 +17,14 @@ from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V7.1 (EXTREME VISION LEVEL - STREAM FIX)
-    Includes: KeyBERT, FAISS, KMeans, and Safe HTTP Multimodal Image/Video Streaming Reranker.
+    🔥 StockClip Finder AI - Engine V8 (GOD MODE)
+    Includes: Groq API Smart Queries, KeyBERT, FAISS, KMeans, and Vision Reranker.
     """
 
-    def __init__(self, pexels_key: str, pixabay_key: str):
+    def __init__(self, pexels_key: str, pixabay_key: str, groq_key: str = ""):
         self.pexels_key = pexels_key
         self.pixabay_key = pixabay_key
+        self.groq_key = groq_key
         self.max_results = 12
         
         self.embedding_cache = {}
@@ -43,7 +44,7 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V7.1 (Safe Deep-Vision Stream) ready!")
+        print("✅ Engine V8 (Groq API Integrated) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
@@ -89,10 +90,49 @@ class StockEngine:
         return en_text, best_phrase
 
     # =====================================================
-    # 👁️ HYBRID MULTIMODAL STREAMING GRABBER (FIXED 🔥)
+    # ⚡ GROQ API SMART EXPANSION (NEW)
+    # =====================================================
+    def _expand_query(self, q: str) -> Dict[str, List[str]]:
+        q = q.lower().strip()
+        queries = [q] # 1 Raw Query (User's / KeyBERT's choice)
+        
+        if self.groq_key:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {self.groq_key}",
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "model": "llama3-8b-8192", # Blazing fast
+                    "messages": [
+                        {"role": "system", "content": "You are an expert stock footage researcher. Given a visual scene, generate exactly 5 highly distinct, optimized search queries (2-4 words each) to find stock footage on Pexels/Pixabay. Return ONLY a comma-separated list of the 5 queries. No numbers, no intro."},
+                        {"role": "user", "content": f"Scene: {q}"}
+                    ],
+                    "temperature": 0.7
+                }
+                res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=5)
+                if res.status_code == 200:
+                    content = res.json()["choices"][0]["message"]["content"]
+                    # Clean and extract the comma-separated list
+                    groq_queries = [x.strip().strip('"').strip("'") for x in content.split(',') if len(x.strip()) > 2]
+                    print(f"⚡ [Groq AI] Generated Queries: {groq_queries}")
+                    queries.extend(groq_queries[:5])
+            except Exception as e:
+                print(f"⚠️ Groq Expansion Failed (Fallback to generic): {e}")
+
+        # Fallback in case Groq is not configured or failed
+        if len(queries) < 6:
+            fallbacks = [f"{q} cinematic", f"{q} wide shot", f"{q} dramatic", f"{q} 4k", f"{q} abstract"]
+            for fb in fallbacks:
+                if len(queries) < 6: queries.append(fb)
+
+        # Send all 6 variations to both platforms
+        return {"pexels": queries[:6], "pixabay": queries[:6]}
+
+    # =====================================================
+    # 👁️ HYBRID MULTIMODAL STREAMING GRABBER
     # =====================================================
     def _fetch_visual_context(self, clip: Dict) -> tuple:
-        # Plan A: Try Thumbnail Fetch
         try:
             res = requests.get(clip['thumbnail'], timeout=3)
             if res.status_code == 200:
@@ -101,28 +141,21 @@ class StockEngine:
         except Exception:
             pass
         
-        # Plan B: OpenCV Direct URL Video Streaming Grabber
         try:
             video_url = clip['download_url']
             cap = cv2.VideoCapture(video_url)
             if cap.isOpened():
-                # HTTP स्ट्रीम पर सीधे छलांग लगाना (Seeking) NAL Units को तोड़ देता है।
-                # इसलिए हम सुरक्षित तरीके से पहले 5 फ्रेम को तेज़ी से रीड करके छोड़ देंगे।
                 for _ in range(5):
                     ret, _ = cap.read()
                     if not ret: break
-                
-                # 6ठा फ्रेम कैप्चर करें जो ब्लैक स्क्रीन नहीं होगा
                 ret, frame = cap.read()
                 cap.release()
-                
                 if ret:
-                    # OpenCV BGR को PIL RGB में बदलें
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     img = Image.fromarray(frame_rgb)
                     return clip, img, "VideoFrame"
-        except Exception as e:
-            print(f"[OpenCV Stream Error] Failed for {clip['id']}: {e}")
+        except Exception:
+            pass
             
         return clip, None, "Failed"
 
@@ -191,7 +224,7 @@ class StockEngine:
             try: full_context = GoogleTranslator(source='auto', target='en').translate(query)
             except: full_context = query
                 
-        expanded = self._expand_query(query)
+        expanded = self._expand_query(query) # Using Groq now!
         raw = self._fetch_all(expanded, orientation)
 
         filtered = self._filter(raw, orientation, quality)
@@ -215,12 +248,6 @@ class StockEngine:
     # =====================================================
     # FETCHING & UTILITIES
     # =====================================================
-    def _expand_query(self, q: str) -> Dict[str, List[str]]:
-        q = q.lower().strip()
-        base_sets = [q, f"{q} cinematic", f"{q} documentary", f"{q} wide shot", f"{q} dramatic", f"{q} 4k"]
-        alt_sets = [f"{q} background", f"{q} concept", f"{q} visualization", f"{q} motion", f"{q} abstract", f"{q} digital"]
-        return {"pexels": base_sets[:6], "pixabay": alt_sets[:6]}
-
     def _fetch_all(self, expanded: Dict[str, List[str]], orientation: str):
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
