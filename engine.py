@@ -7,18 +7,18 @@ import numpy as np
 import re
 import requests
 import cv2
+import threading
 from PIL import Image
 from io import BytesIO
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer, util
 import faiss
-from sklearn.cluster import KMeans
 from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V8 (GOD MODE)
-    Includes: Groq API Smart Queries, KeyBERT, FAISS, KMeans, and Vision Reranker.
+    🔥 StockClip Finder AI - Engine V10 (THE ARCHITECT LEVEL)
+    Includes: Isolated Pipelines, Vision AI, and Thread-Safe Global Unique Registry.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str, groq_key: str = ""):
@@ -44,7 +44,7 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V8 (Groq API Integrated) ready!")
+        print("✅ Engine V10 (Global Registry Locked) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
@@ -90,11 +90,11 @@ class StockEngine:
         return en_text, best_phrase
 
     # =====================================================
-    # ⚡ GROQ API SMART EXPANSION (NEW)
+    # ⚡ GROQ API SMART EXPANSION
     # =====================================================
-    def _expand_query(self, q: str) -> Dict[str, List[str]]:
+    def _expand_query(self, q: str) -> List[str]:
         q = q.lower().strip()
-        queries = [q] # 1 Raw Query (User's / KeyBERT's choice)
+        queries = [q] 
         
         if self.groq_key:
             try:
@@ -103,7 +103,7 @@ class StockEngine:
                     "Content-Type": "application/json"
                 }
                 payload = {
-                    "model": "meta-llama/llama-4-scout-17b-16e-instruct", # Blazing fast
+                    "model": "meta-llama/llama-4-scout-17b-16e-instruct", 
                     "messages": [
                         {"role": "system", "content": "You are an expert stock footage researcher. Given a visual scene, generate exactly 5 highly distinct, optimized search queries (2-4 words each) to find stock footage on Pexels/Pixabay. Return ONLY a comma-separated list of the 5 queries. No numbers, no intro."},
                         {"role": "user", "content": f"Scene: {q}"}
@@ -113,21 +113,18 @@ class StockEngine:
                 res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=5)
                 if res.status_code == 200:
                     content = res.json()["choices"][0]["message"]["content"]
-                    # Clean and extract the comma-separated list
                     groq_queries = [x.strip().strip('"').strip("'") for x in content.split(',') if len(x.strip()) > 2]
                     print(f"⚡ [Groq AI] Generated Queries: {groq_queries}")
                     queries.extend(groq_queries[:5])
             except Exception as e:
-                print(f"⚠️ Groq Expansion Failed (Fallback to generic): {e}")
+                print(f"⚠️ Groq Expansion Failed: {e}")
 
-        # Fallback in case Groq is not configured or failed
         if len(queries) < 6:
             fallbacks = [f"{q} cinematic", f"{q} wide shot", f"{q} dramatic", f"{q} 4k", f"{q} abstract"]
             for fb in fallbacks:
                 if len(queries) < 6: queries.append(fb)
 
-        # Send all 6 variations to both platforms
-        return {"pexels": queries[:6], "pixabay": queries[:6]}
+        return queries[:6]
 
     # =====================================================
     # 👁️ HYBRID MULTIMODAL STREAMING GRABBER
@@ -159,14 +156,14 @@ class StockEngine:
             
         return clip, None, "Failed"
 
-    def _batch_vision_score(self, target_english_text: str, clips: List[Dict]) -> List[Dict]:
+    def _vision_score_candidates(self, target_english_text: str, clips: List[Dict]) -> List[Dict]:
         if not clips: return []
         
         valid_clips = []
         failed_clips = []
         images = []
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
             results = ex.map(self._fetch_visual_context, clips)
             
         for c, img, source_type in results:
@@ -198,77 +195,102 @@ class StockEngine:
         return all_scored_clips
 
     # =====================================================
-    # 🛤️ THE ISOLATED TRACK PIPELINE (तुम्हारी सोच वाला लॉजिक)
+    # 🛤️ PURE ISOLATED TRACK WITH THREAD-SAFE REGISTRY
     # =====================================================
-    def _process_single_query_track(self, q: str, orientation: str, quality: str) -> List[Dict]:
-        """हर कीवर्ड की अपनी 'अग्निपरीक्षा'। यह सिर्फ इस कीवर्ड के लिए 1 Pexels और 1 Pixabay विनर निकालेगा।"""
+    def _process_single_query_track(self, q: str, orientation: str, quality: str, full_context: str, global_seen_ids: set, seen_lock: threading.Lock) -> List[Dict]:
         raw_pex = self._fetch_pexels(q, orientation)
         raw_pix = self._fetch_pixabay(q, orientation)
 
         filtered_pex = self._filter(raw_pex, orientation, quality)
         filtered_pix = self._filter(raw_pix, orientation, quality)
 
-        # FAISS Scoring सिर्फ इसी 'q' (कीवर्ड) के लिए
         scored_pex = self._faiss_semantic_score(filtered_pex, q) if filtered_pex else []
         scored_pix = self._faiss_semantic_score(filtered_pix, q) if filtered_pix else []
 
+        # FAISS के टॉप 5 निकालेंगे
+        top_pex_candidates = scored_pex[:5]
+        top_pix_candidates = scored_pix[:5]
+
+        # Vision AI इन 5 को परखेगा
+        vision_pex = self._vision_score_candidates(full_context, top_pex_candidates) if top_pex_candidates else []
+        vision_pix = self._vision_score_candidates(full_context, top_pix_candidates) if top_pix_candidates else []
+
         track_winners = []
-        if scored_pex: track_winners.append(scored_pex[0]) # Pexels का विनर
-        if scored_pix: track_winners.append(scored_pix[0]) # Pixabay का विनर
+
+        # 🔒 THE FIX: Thread-Safe Selection (तुम्हारी सोच का कोड)
+        # Pexels विनर चुनें
+        if vision_pex:
+            with seen_lock:
+                for vp in vision_pex:
+                    if vp['id'] not in global_seen_ids:
+                        global_seen_ids.add(vp['id']) # लॉक कर दिया!
+                        track_winners.append(vp)
+                        break
+
+        # Pixabay विनर चुनें
+        if vision_pix:
+            with seen_lock:
+                for vp in vision_pix:
+                    if vp['id'] not in global_seen_ids:
+                        global_seen_ids.add(vp['id']) # लॉक कर दिया!
+                        track_winners.append(vp)
+                        break
 
         return track_winners
 
     # =====================================================
-    # MAIN SEARCH PIPELINE (NO KHICHDI 🍲🚫)
+    # MAIN SEARCH PIPELINE
     # =====================================================
     def execute_search(self, query: str, orientation: str, quality: str, full_context: str = None) -> List[Dict[str, Any]]:
         if not full_context:
             try: full_context = GoogleTranslator(source='auto', target='en').translate(query)
             except: full_context = query
                 
-        # Groq से 6 क्वेरीज मिलेंगी
-        expanded = self._expand_query(query) 
-        queries_to_run = expanded["pexels"] # Pexels और Pixabay दोनों के लिए लिस्ट सेम ही है
+        queries_to_run = self._expand_query(query) 
+        all_final_winners = []
         
-        all_track_winners = []
+        # 🛡️ THE GLOBAL REGISTRY
+        global_seen_ids = set()
+        seen_lock = threading.Lock()
 
-        # 1. सभी 6 रास्तों (Tracks) को एक साथ दौड़ाएं
+        # सभी 6 क्वेरीज को एक साथ दौड़ाएं
         with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
-            futures = [ex.submit(self._process_single_query_track, q, orientation, quality) for q in queries_to_run]
+            futures = [ex.submit(self._process_single_query_track, q, orientation, quality, full_context, global_seen_ids, seen_lock) for q in queries_to_run]
             for f in concurrent.futures.as_completed(futures):
-                all_track_winners.extend(f.result())
+                all_final_winners.extend(f.result())
 
-        deduped = self._deduplicate(all_track_winners)
-        
-        if not deduped: return []
+        # सीन डिटेक्ट करें
+        final_results = self._detect_scenes(all_final_winners)
 
-        # 2. 👁️ द फाइनल बॉस: Vision AI Verification
-        # 6 कीवर्ड्स x 2 प्लेटफॉर्म्स = 12 विनर्स। अब CLIP इन 12 को अपनी आँखों से परखेगा।
-        vision_verified = self._batch_vision_score(target_english_text=full_context, clips=deduped)
-        
-        # 3. सीन डिटेक्शन (Drone/Macro आदि)
-        final_results = self._detect_scenes(vision_verified)
-
+        # Vector डेटा साफ़ करें
         for c in final_results:
             c.pop("vector", None)
 
-        # टॉप 12 रिटर्न कर दें (अब KMeans की कोई ज़रूरत नहीं!)
+        final_results.sort(key=lambda x: x["score"], reverse=True)
         return final_results[:self.max_results]
+
+    # =====================================================
+    # SCRIPT-TO-FOOTAGE PIPELINE
+    # =====================================================
+    def generate_video_timeline(self, script: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
+        raw_scenes = re.split(r'[.।|\n]+', script)
+        scenes = [s.strip() for s in raw_scenes if len(s.strip()) > 15] 
+        
+        timeline = []
+        for scene_text in scenes[:6]:
+            full_en_text, search_query = self._extract_visual_keywords(scene_text)
+            candidates = self.execute_search(query=search_query, orientation=orientation, quality=quality, full_context=full_en_text)
+            
+            timeline.append({
+                "scene_text": scene_text,
+                "clip": candidates[0] if candidates else None
+            })
+            
+        return timeline
 
     # =====================================================
     # FETCHING & UTILITIES
     # =====================================================
-    def _fetch_all(self, expanded: Dict[str, List[str]], orientation: str):
-        results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as ex:
-            futures = []
-            for q in expanded["pexels"]: futures.append(ex.submit(self._fetch_pexels, q, orientation))
-            for q in expanded["pixabay"]: futures.append(ex.submit(self._fetch_pixabay, q, orientation))
-            for f in concurrent.futures.as_completed(futures):
-                try: results.extend(f.result())
-                except: continue
-        return results
-
     def _fetch_pexels(self, query: str, orientation: str):
         api_orient = "landscape" if orientation == "landscape" else "portrait"
         url = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query)}&per_page=10&orientation={api_orient}"
@@ -327,15 +349,6 @@ class StockEngine:
             if c.get("download_url"): out.append(c)
         return out
 
-    def _deduplicate(self, clips):
-        seen, out = set(), []
-        for c in clips:
-            fp = hashlib.md5(f"{c['width']}x{c['height']}_{c['duration']}_{c['source']}".encode()).hexdigest()
-            if fp not in seen:
-                seen.add(fp)
-                out.append(c)
-        return out
-
     def _get_embeddings_batch(self, texts: List[str]) -> np.ndarray:
         embeddings, texts_to_compute, indices_to_compute = [], [], []
         for i, text in enumerate(texts):
@@ -366,7 +379,6 @@ class StockEngine:
         sims, _ = index.search(q_emb, len(clips))
         sims = sims[0]
 
-        max_views, max_likes = max([c["views"] for c in clips] + [1]), max([c["likes"] for c in clips] + [1])
         scored = []
 
         for i, c in enumerate(clips):
@@ -376,7 +388,7 @@ class StockEngine:
 
             h = c["height"]
             res_score = 1.0 if h >= 2160 else (0.8 if h >= 1080 else 0.5)
-            eng = min(0.6 + (res_score * 0.3), 1.0) if c['source'] == 'Pexels' else (c["views"] / max_views + c["likes"] / max_likes) / 2
+            eng = min(0.6 + (res_score * 0.3), 1.0) 
             duration_score = 1.0 if 6 <= c["duration"] <= 18 else 0.7
 
             final = (sim * 0.50) + (res_score * 0.20) + (eng * 0.20) + (duration_score * 0.10)
@@ -399,23 +411,3 @@ class StockEngine:
                     highest_sim, best_scene = sim, scene_name
             c["scene_type"] = best_scene
         return clips
-
-    def _kmeans_diversity(self, clips):
-        if len(clips) <= self.max_results: return clips
-        X = np.array([c["vector"] for c in clips])
-        n_clusters = min(self.max_results, len(clips))
-        
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
-        cluster_labels = kmeans.fit_predict(X)
-
-        clusters_dict = {i: [] for i in range(n_clusters)}
-        for idx, label in enumerate(cluster_labels): clusters_dict[label].append(clips[idx])
-
-        final_selection = []
-        for label, cluster_clips in clusters_dict.items():
-            if cluster_clips:
-                cluster_clips.sort(key=lambda x: x["score"], reverse=True)
-                final_selection.append(cluster_clips[0])
-                
-        final_selection.sort(key=lambda x: x["score"], reverse=True)
-        return final_selection
