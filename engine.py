@@ -91,6 +91,10 @@ class StockEngine:
         processed = self._detect_scenes(scored)
         final_results = self._kmeans_diversity(processed)
 
+        # 🛑 CRITICAL FIX: Ensure no numpy arrays leak into the JSON response!
+        for c in final_results:
+            c.pop("vector", None)
+
         return final_results[:self.max_results]
 
     def _expand_query(self, q: str) -> Dict[str, List[str]]:
