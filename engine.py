@@ -17,8 +17,8 @@ from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V7 (EXTREME VISION LEVEL)
-    Includes: KeyBERT, FAISS, KMeans, and Hybrid Multimodal Image/Video Streaming Reranker.
+    🔥 StockClip Finder AI - Engine V7.1 (EXTREME VISION LEVEL - STREAM FIX)
+    Includes: KeyBERT, FAISS, KMeans, and Safe HTTP Multimodal Image/Video Streaming Reranker.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str):
@@ -43,7 +43,7 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V7 (Extreme Deep-Vision Enabled) ready!")
+        print("✅ Engine V7.1 (Safe Deep-Vision Stream) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
@@ -89,13 +89,9 @@ class StockEngine:
         return en_text, best_phrase
 
     # =====================================================
-    # 👁️ HYBRID MULTIMODAL STREAMING GRABBER (THE MASTERSTROKE 🔥)
+    # 👁️ HYBRID MULTIMODAL STREAMING GRABBER (FIXED 🔥)
     # =====================================================
     def _fetch_visual_context(self, clip: Dict) -> tuple:
-        """
-        पहले थंबनेल डाउनलोड करने की कोशिश करता है।
-        अगर थंबनेल फेल होता है, तो सीधे वीडियो लिंक को स्ट्रीम करके बीच का स्क्रीनशॉट काट लेता है!
-        """
         # Plan A: Try Thumbnail Fetch
         try:
             res = requests.get(clip['thumbnail'], timeout=3)
@@ -105,16 +101,18 @@ class StockEngine:
         except Exception:
             pass
         
-        # Plan B: OpenCV Direct URL Video Streaming Grabber (No full download!)
+        # Plan B: OpenCV Direct URL Video Streaming Grabber
         try:
             video_url = clip['download_url']
             cap = cv2.VideoCapture(video_url)
             if cap.isOpened():
-                total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-                # ब्लैक स्क्रीन से बचने के लिए वीडियो के 25% हिस्से पर कूदें
-                if total_frames > 24:
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * 0.25))
+                # HTTP स्ट्रीम पर सीधे छलांग लगाना (Seeking) NAL Units को तोड़ देता है।
+                # इसलिए हम सुरक्षित तरीके से पहले 5 फ्रेम को तेज़ी से रीड करके छोड़ देंगे।
+                for _ in range(5):
+                    ret, _ = cap.read()
+                    if not ret: break
                 
+                # 6ठा फ्रेम कैप्चर करें जो ब्लैक स्क्रीन नहीं होगा
                 ret, frame = cap.read()
                 cap.release()
                 
@@ -135,7 +133,6 @@ class StockEngine:
         failed_clips = []
         images = []
         
-        # समानांतर (Parallel) थंबनेल और वीडियो स्ट्रीमिंग प्रोसेसिंग
         with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
             results = ex.map(self._fetch_visual_context, clips)
             
@@ -144,16 +141,14 @@ class StockEngine:
                 valid_clips.append((c, source_type))
                 images.append(img)
             else:
-                # यदि दोनों तरीके फेल हो जाएं (सख्त सुरक्षा)
                 c['visual_score'] = 0.0
                 c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | ❌ Vision: Failed"
-                c['score'] = round(c['score'] * 0.3) # स्कोर गिरा दें
+                c['score'] = round(c['score'] * 0.3) 
                 failed_clips.append(c)
                 
         if not valid_clips:
             return clips 
             
-        # CLIP AI Scoring
         img_embeddings = self.clip_model.encode(images, convert_to_tensor=True)
         txt_embedding = self.clip_model.encode([target_english_text], convert_to_tensor=True)
         
@@ -162,11 +157,7 @@ class StockEngine:
         for i, (c, source_type) in enumerate(valid_clips):
             vision_score = max(0.0, sims[i])
             c['visual_score'] = round(vision_score * 100, 2)
-            
-            # UI पर साफ़ दिखाएं कि AI ने फोटो जाँची या असली वीडियो फ्रेम!
             c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | {source_type}: {c['visual_score']}%"
-            
-            # 60% वज़न विज़न स्कोर को, 40% टेक्स्ट को
             c['score'] = min(round((c['score'] * 0.4) + (c['visual_score'] * 0.6)), 100)
             
         all_scored_clips = [item[0] for item in valid_clips] + failed_clips
@@ -193,7 +184,7 @@ class StockEngine:
         return timeline
 
     # =====================================================
-    # MAIN SEARCH PIPELINE (NOW WITH ULTRA-VISION 👁️)
+    # MAIN SEARCH PIPELINE
     # =====================================================
     def execute_search(self, query: str, orientation: str, quality: str, full_context: str = None) -> List[Dict[str, Any]]:
         if not full_context:
@@ -210,7 +201,6 @@ class StockEngine:
 
         scored_text = self._faiss_semantic_score(deduped, query)
         
-        # टॉप 24 वीडियो को विज़न री-रैंकिंग के लिए भेजें
         top_candidates = scored_text[:24]
         vision_verified = self._batch_vision_score(target_english_text=full_context, clips=top_candidates)
         
