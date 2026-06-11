@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockClip Finder AI (V3)</title>
+    <title>StockClip Finder AI (V8)</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -30,7 +30,7 @@
         p.subtitle { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
 
         /* Tabs UI */
-        .tabs { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; }
+        .tabs { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
         .tab-btn { background: transparent; color: var(--text-muted); border: 2px solid transparent; padding: 12px 24px; font-size: 1.1rem; font-weight: 600; cursor: pointer; border-radius: 12px; transition: 0.3s; }
         .tab-btn.active { background: rgba(79, 70, 229, 0.1); border-color: var(--primary); color: white; }
         
@@ -60,7 +60,7 @@
 
         /* Results / Grid */
         .results-container { max-width: 1400px; margin: 0 auto; padding: 0 20px 60px; width: 100%; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; }
         
         /* Timeline specific CSS */
         .timeline-grid { display: flex; flex-direction: column; gap: 30px; max-width: 900px; margin: 0 auto; }
@@ -85,10 +85,13 @@
         .badge.score { color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
 
         .card-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
-        .card-meta { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.85rem; }
-        .ai-query { background: rgba(79, 70, 229, 0.1); color: #818cf8; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; }
+        .card-meta { display: flex; flex-direction: column; gap: 6px; color: var(--text-muted); font-size: 0.85rem; }
+        .meta-row { display: flex; justify-content: space-between; }
         
-        .card-actions { display: flex; gap: 10px; margin-top: auto; }
+        .ai-tags { font-size: 0.75rem; color: #cbd5e1; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .ai-query { background: rgba(79, 70, 229, 0.1); color: #818cf8; padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(79, 70, 229, 0.2); }
+        
+        .card-actions { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; }
         .btn-outline, .btn-primary { flex: 1; padding: 10px; border-radius: 8px; text-align: center; text-decoration: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
         .btn-outline { background: transparent; border: 1px solid var(--border-color); color: white; }
         .btn-primary { background: var(--primary); color: white; border: none; }
@@ -99,7 +102,7 @@
 
     <header>
         <h1>StockClip Finder AI</h1>
-        <p class="subtitle">Powered by FAISS Vector Engine & KMeans Visual Clustering</p>
+        <p class="subtitle">Powered by Groq Llama-3, FAISS, and CLIP Vision Engine</p>
     </header>
 
     <div class="tabs">
@@ -111,7 +114,6 @@
         <div class="glass-panel">
             <div class="error-message" id="errorBox"></div>
             
-            <!-- Global Settings -->
             <div class="input-group" style="margin-bottom: 10px;">
                 <select id="orientationSelect">
                     <option value="landscape">Landscape (16:9)</option>
@@ -125,18 +127,16 @@
                 </select>
             </div>
 
-            <!-- Search Mode -->
             <form id="searchForm" class="tab-content active">
                 <div class="input-group">
-                    <input type="text" id="queryInput" placeholder="Describe the scene (e.g., Deep space nebula)..." required>
+                    <input type="text" id="queryInput" placeholder="Describe the scene..." required>
                 </div>
-                <button type="submit" style="margin-top:16px;">Search AI</button>
+                <button type="submit" style="margin-top:16px;">Search with AI Vision</button>
             </form>
 
-            <!-- Auto-Pilot Mode -->
             <form id="timelineForm" class="tab-content">
                 <div class="input-group">
-                    <textarea id="scriptInput" placeholder="Paste your script here... The AI will read it, break it into scenes, and find the perfect video for each sentence! (Try to keep it under 5-6 sentences for now)" required></textarea>
+                    <textarea id="scriptInput" placeholder="Paste your script here... The AI will read it, generate Groq keywords, and find the perfect video for each sentence!" required></textarea>
                 </div>
                 <button type="submit" style="margin-top:16px;">Generate Video Timeline</button>
             </form>
@@ -144,19 +144,16 @@
         </div>
     </div>
 
-    <!-- Loading State -->
     <div class="progress-overlay" id="progressOverlay">
         <div class="spinner"></div>
-        <div class="progress-text" id="progressText">Processing AI Architecture...</div>
+        <div class="progress-text" id="progressText">Engaging AI Brain...</div>
     </div>
 
-    <!-- Results Display -->
     <div class="results-container">
         <div id="resultsArea"></div>
     </div>
 
     <script>
-        // Core Logic
         const errorBox = document.getElementById('errorBox');
         const progressOverlay = document.getElementById('progressOverlay');
         const progressText = document.getElementById('progressText');
@@ -176,8 +173,8 @@
         }
 
         const loadingStates = {
-            'search': ["Computing FAISS Semantic Matches...", "Detecting Scene Types (Cinematic/Drone)...", "Applying KMeans Visual Clustering...", "Selecting elite results..."],
-            'autopilot': ["Parsing script into narrative scenes...", "Generating autonomous queries...", "Executing FAISS vector search for each scene...", "Assembling timeline..."]
+            'search': ["Groq AI generating 5 smart queries...", "Fetching hundreds of raw clips...", "FAISS mapping semantic vectors...", "CLIP Vision verifying frames...", "KMeans clustering diverse results..."],
+            'autopilot': ["Parsing script narrative...", "Groq AI generating scene queries...", "FAISS mapping texts...", "CLIP Vision extracting frames...", "Assembling timeline..."]
         };
 
         function startProgressAnimation() {
@@ -193,7 +190,7 @@
             progressInterval = setInterval(() => {
                 stateIndex++;
                 if (stateIndex < states.length) progressText.innerText = states[stateIndex];
-            }, 1200);
+            }, 1500);
         }
 
         function stopProgressAnimation() {
@@ -207,19 +204,28 @@
         function createVideoCard(clip, orientation) {
             if (!clip) return `<div class="card"><div class="card-body" style="justify-content:center; align-items:center; color:#ef4444;">No highly relevant clip found.</div></div>`;
             const aspectStyle = orientation === 'portrait' ? 'aspect-ratio: 9/16;' : 'aspect-ratio: 16/9;';
+            
+            // Format tags to look clean
+            let displayTags = clip.tags ? clip.tags : 'N/A';
+            if (displayTags.length > 60) displayTags = displayTags.substring(0, 60) + '...';
+
             return `
                 <div class="card">
                     <div class="media-container" style="${aspectStyle}">
                         <video src="${clip.download_url}" poster="${clip.thumbnail}" muted loop onmouseover="this.play()" onmouseout="this.pause()" playsinline></video>
                         <div class="badge-container">
                             <span class="badge quality">${clip.quality_label}</span>
-                            <span class="badge score">AI Match: ${clip.ai_similarity}%</span>
+                            <span class="badge score">Final Score: ${clip.score}</span>
                         </div>
                     </div>
                     <div class="card-body">
                         <div class="card-meta">
-                            <span>Res: ${clip.aspect_ratio}</span>
-                            <span>Source: ${clip.source}</span>
+                            <div class="meta-row">
+                                <span>Res: ${clip.aspect_ratio}</span>
+                                <span>Source: ${clip.source}</span>
+                            </div>
+                            <div class="ai-tags">🏷️ Tags: ${displayTags}</div>
+                            <div class="ai-query">🔍 Query: ${clip.query_used}</div>
                         </div>
                         <div class="card-actions">
                             <a href="${clip.url}" target="_blank" class="btn-outline">View Source</a>
@@ -230,7 +236,6 @@
             `;
         }
 
-        // Search Form Submit
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = document.getElementById('queryInput').value;
@@ -252,7 +257,6 @@
             } catch (err) { stopProgressAnimation(); showError('Network Error.'); }
         });
 
-        // Timeline (Script to Video) Form Submit
         document.getElementById('timelineForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const script = document.getElementById('scriptInput').value;
