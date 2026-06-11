@@ -9,11 +9,12 @@ from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer
 import faiss
 from sklearn.cluster import KMeans
+from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V3 (Autonomous Ready)
-    Includes: FAISS, KMeans, Cache, Scene Detection, and Script-to-Footage Pipeline.
+    🔥 StockClip Finder AI - Engine V3.1 (Autonomous Ready + Keyword Extraction)
+    Includes: FAISS, KMeans, Cache, Scene Detection, and True Cross-lingual Script-to-Footage.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str):
@@ -26,8 +27,8 @@ class StockEngine:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
 
-        print("🚀 Loading AI Model (V3 faiss-optimized)...")
-        # Multilingual model supports both Hindi and English for better semantic mapping
+        print("🚀 Loading AI Model (V3.1 faiss-optimized)...")
+        # Multilingual model supports both Hindi and English for semantic mapping
         self.model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
         
         self.scene_anchors = {
@@ -36,31 +37,62 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V3 ready!")
+        print("✅ Engine V3.1 ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
 
     # =====================================================
-    # SCRIPT-TO-FOOTAGE PIPELINE (NEW 🔥)
+    # NLP KEYWORD EXTRACTOR (THE MAGIC FIX 🔥)
+    # =====================================================
+    def _extract_visual_keywords(self, scene_text: str) -> str:
+        """Translates Hindi/Multilingual text to English and extracts pure visual keywords."""
+        try:
+            # 1. Auto-Translate to English
+            en_text = GoogleTranslator(source='auto', target='en').translate(scene_text)
+        except Exception as e:
+            print(f"Translation error: {e}")
+            en_text = scene_text
+        
+        # 2. Clean punctuation
+        clean_text = re.sub(r'[^\w\s]', '', en_text.lower())
+        words = clean_text.split()
+        
+        # 3. Remove non-visual grammar words (Stopwords)
+        stop_words = {
+            "imagine", "that", "you", "are", "standing", "in", "the", "middle", "of", 
+            "and", "as", "soon", "go", "inside", "see", "a", "to", "it", "out", 
+            "your", "eyes", "suddenly", "there", "is", "with", "on", "at", "by", 
+            "for", "from", "an", "was", "were", "will", "we", "they", "he", "she",
+            "reach", "touch", "start", "starts", "can", "could", "would", "about"
+        }
+        
+        # 4. Filter words
+        keywords = [w for w in words if w not in stop_words and len(w) > 2]
+        
+        # 5. Build final query (Take up to 4 words for maximum API accuracy)
+        final_query = " ".join(keywords[:4])
+        
+        # Fallback if everything was filtered out
+        if not final_query.strip():
+            final_query = "cinematic mysterious landscape"
+            
+        print(f"🧠 [AI Translator] Extracted Query -> '{final_query}'")
+        return final_query
+
+    # =====================================================
+    # SCRIPT-TO-FOOTAGE PIPELINE
     # =====================================================
     def generate_video_timeline(self, script: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
-        """
-        Breaks down a script into scenes and assigns the best possible video clip to each scene.
-        """
-        # 1. NLP Scene Parsing: Split script by periods, newlines, or pipes
         raw_scenes = re.split(r'[.।|\n]+', script)
-        scenes = [s.strip() for s in raw_scenes if len(s.strip()) > 15] # Filter out very short words
+        scenes = [s.strip() for s in raw_scenes if len(s.strip()) > 15] 
         
         timeline = []
         
-        # Limit to 6 scenes max to prevent API rate-limiting in a single request
         for scene_text in scenes[:6]:
-            # Generate highly optimized search query from scene
-            # We take the first few words + generic visual tags for APIs, FAISS will handle the real logic
-            search_query = " ".join(scene_text.split()[:5]) 
+            # 🔥 Using the new Extractor instead of raw slicing
+            search_query = self._extract_visual_keywords(scene_text)
             
-            # 2. Fetch & Score candidates for this specific scene
             clips = self.execute_search(query=search_query, orientation=orientation, quality=quality)
             
             best_clip = None
@@ -76,7 +108,7 @@ class StockEngine:
         return timeline
 
     # =====================================================
-    # SEARCH & FAISS CORE (V3)
+    # SEARCH & FAISS CORE
     # =====================================================
     def execute_search(self, query: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
         expanded = self._expand_query(query)
@@ -265,5 +297,4 @@ class StockEngine:
                 final_selection.append(cluster_clips[0])
                 
         final_selection.sort(key=lambda x: x["score"], reverse=True)
-        for c in final_selection: del c["vector"]
         return final_selection
