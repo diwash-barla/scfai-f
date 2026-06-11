@@ -8,7 +8,7 @@ import re
 import requests
 import cv2
 import threading
-import gc  # 🔥 NEW: Garbage Collector for Memory Management
+import gc
 from PIL import Image
 from io import BytesIO
 from typing import List, Dict, Any
@@ -18,8 +18,8 @@ from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V11 (THE MEMORY OPTIMIZED ARCHITECT)
-    Includes: Auto RAM Cleanup, Cache Limits, Isolated Pipelines, and Global Lock.
+    🔥 StockClip Finder AI - Engine V13 (STRICT QUALITY BOUNCER)
+    Includes: Zero Cache, Isolated Pipelines, Global Lock, and Strict Passing Marks.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str, groq_key: str = ""):
@@ -27,9 +27,6 @@ class StockEngine:
         self.pixabay_key = pixabay_key
         self.groq_key = groq_key
         self.max_results = 12
-        
-        self.embedding_cache = {}
-        self.MAX_CACHE_SIZE = 5000 # 🔥 RAM बचाने के लिए लिमिट
         
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -47,7 +44,7 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V11 (Memory Leak Fixed) ready!")
+        print("✅ Engine V13 (Strict Quality Thresholds) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
@@ -149,7 +146,7 @@ class StockEngine:
                     ret, _ = cap.read()
                     if not ret: break
                 ret, frame = cap.read()
-                cap.release() # 🔥 Video connection closed here
+                cap.release()
                 if ret:
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     img = Image.fromarray(frame_rgb)
@@ -196,8 +193,7 @@ class StockEngine:
         all_scored_clips = [item[0] for item in valid_clips] + failed_clips
         all_scored_clips.sort(key=lambda x: x['score'], reverse=True)
 
-        # 🔥 INSTANT MEMORY CLEANUP
-        # ये भारी-भरकम इमेजेज और वेक्टर्स को तुरंत रैम से उड़ा देगा!
+        # Cleanup RAM
         del images
         del img_embeddings
         del txt_embedding
@@ -206,7 +202,7 @@ class StockEngine:
         return all_scored_clips
 
     # =====================================================
-    # 🛤️ PURE ISOLATED TRACK WITH THREAD-SAFE REGISTRY
+    # 🛤️ PURE ISOLATED TRACK WITH STRICT THRESHOLDS
     # =====================================================
     def _process_single_query_track(self, q: str, orientation: str, quality: str, full_context: str, global_seen_ids: set, seen_lock: threading.Lock) -> List[Dict]:
         raw_pex = self._fetch_pexels(q, orientation)
@@ -225,22 +221,34 @@ class StockEngine:
         vision_pix = self._vision_score_candidates(full_context, top_pix_candidates) if top_pix_candidates else []
 
         track_winners = []
+        
+        # 🔥 THE BOUNCER: Minimum Passing Marks!
+        MIN_VISION_SCORE = 21.0
+        MIN_FINAL_SCORE = 40
 
         if vision_pex:
             with seen_lock:
                 for vp in vision_pex:
-                    if vp['id'] not in global_seen_ids:
-                        global_seen_ids.add(vp['id']) 
-                        track_winners.append(vp)
-                        break
+                    # सिर्फ तभी पास होगा जब स्कोर लिमिट से ऊपर हो!
+                    if vp['visual_score'] >= MIN_VISION_SCORE and vp['score'] >= MIN_FINAL_SCORE:
+                        if vp['id'] not in global_seen_ids:
+                            global_seen_ids.add(vp['id']) 
+                            track_winners.append(vp)
+                            break
+                    else:
+                        print(f"🚫 Rejected Pexels Trash for '{q}': Vision {vp['visual_score']}%")
 
         if vision_pix:
             with seen_lock:
                 for vp in vision_pix:
-                    if vp['id'] not in global_seen_ids:
-                        global_seen_ids.add(vp['id']) 
-                        track_winners.append(vp)
-                        break
+                    # सिर्फ तभी पास होगा जब स्कोर लिमिट से ऊपर हो!
+                    if vp['visual_score'] >= MIN_VISION_SCORE and vp['score'] >= MIN_FINAL_SCORE:
+                        if vp['id'] not in global_seen_ids:
+                            global_seen_ids.add(vp['id']) 
+                            track_winners.append(vp)
+                            break
+                    else:
+                        print(f"🚫 Rejected Pixabay Trash for '{q}': Vision {vp['visual_score']}%")
 
         return track_winners
 
@@ -264,9 +272,6 @@ class StockEngine:
                 all_final_winners.extend(f.result())
 
         final_results = self._detect_scenes(all_final_winners)
-
-        for c in final_results:
-            c.pop("vector", None)
 
         final_results.sort(key=lambda x: x["score"], reverse=True)
         return final_results[:self.max_results]
@@ -352,29 +357,11 @@ class StockEngine:
         return out
 
     def _get_embeddings_batch(self, texts: List[str]) -> np.ndarray:
-        # 🔥 NEW: RAM Saver - Empty cache if it grows too big
-        if len(self.embedding_cache) > self.MAX_CACHE_SIZE:
-            print("🧹 Cache full! Clearing embeddings to save RAM...")
-            self.embedding_cache.clear()
-            gc.collect()
-
-        embeddings, texts_to_compute, indices_to_compute = [], [], []
-        for i, text in enumerate(texts):
-            if text in self.embedding_cache:
-                embeddings.append(self.embedding_cache[text])
-            else:
-                embeddings.append(None)
-                texts_to_compute.append(text)
-                indices_to_compute.append(i)
-        if texts_to_compute:
-            computed_embs = self.model.encode(texts_to_compute, convert_to_tensor=False)
-            for i, idx in enumerate(indices_to_compute):
-                emb = computed_embs[i]
-                self.embedding_cache[texts_to_compute[i]] = emb
-                embeddings[idx] = emb
-        return np.vstack(embeddings).astype('float32')
+        return self.model.encode(texts, convert_to_tensor=False).astype('float32')
 
     def _faiss_semantic_score(self, clips, query):
+        if not clips: return []
+        
         q_emb = self._get_embeddings_batch([query])
         faiss.normalize_L2(q_emb)
 
@@ -392,7 +379,6 @@ class StockEngine:
         for i, c in enumerate(clips):
             sim = max(0.0, float(sims[i]))
             if sim < 0.15: continue
-            c["vector"] = clip_embs[i]
 
             h = c["height"]
             res_score = 1.0 if h >= 2160 else (0.8 if h >= 1080 else 0.5)
@@ -405,17 +391,13 @@ class StockEngine:
             c['aspect_ratio'] = f"{c['width']}x{c['height']}"
             scored.append(c)
 
+        del q_emb
+        del clip_embs
+        gc.collect()
+
         return sorted(scored, key=lambda x: x["score"], reverse=True)
 
     def _detect_scenes(self, clips):
         for c in clips:
-            best_scene, highest_sim = "General", 0.0
-            clip_vec = c["vector"].reshape(1, -1)
-            for scene_name, anchor_vec in self.scene_anchors.items():
-                anchor_vec_norm = anchor_vec.reshape(1, -1).astype('float32')
-                faiss.normalize_L2(anchor_vec_norm)
-                sim = float(np.dot(clip_vec, anchor_vec_norm.T)[0][0])
-                if sim > highest_sim and sim > 0.25:
-                    highest_sim, best_scene = sim, scene_name
-            c["scene_type"] = best_scene
+            c["scene_type"] = "General" 
         return clips
