@@ -11,13 +11,13 @@ from io import BytesIO
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer, util
 import faiss
-from sklearn.cluster import KMeans
 from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V5 (ULTIMATE LEVEL)
-    Includes: KeyBERT (AI Keyword Generation), CLIP Vision Re-ranking, FAISS, and KMeans.
+    🔥 StockClip Finder AI - Engine V6 (THE VISIONARY UPGRADE)
+    Normal Search now ALSO uses CLIP Vision to physically look at all candidates 
+    and pick the ultimate top 12 clips. No compromises.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str):
@@ -42,34 +42,29 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V5 (Autonomous Vision Brain) ready!")
+        print("✅ Engine V6 (Full Vision Search) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
 
     # =====================================================
-    # 🧠 KeyBERT: AI VECTOR KEYWORD EXTRACTOR (NINJA TECHNIQUE)
+    # 🧠 KeyBERT: AI VECTOR KEYWORD EXTRACTOR
     # =====================================================
     def _extract_visual_keywords(self, scene_text: str) -> tuple:
-        """Uses Vector Similarity to magically extract the most meaningful visual keywords."""
-        # 1. Translate to English
         try:
             en_text = GoogleTranslator(source='auto', target='en').translate(scene_text)
         except Exception:
             en_text = scene_text
         
-        # 2. Clean text
         clean_text = re.sub(r'[^\w\s]', '', en_text.lower())
         words = clean_text.split()
         
-        # We only remove extremely basic grammar so n-grams sound natural
         basic_stops = {"it", "is", "the", "a", "an", "and", "or", "to", "in", "on", "at", "of", "for", "with", "that", "this", "you", "are", "we", "i"}
         filtered_words = [w for w in words if w not in basic_stops]
         
         if not filtered_words:
             return en_text, "mysterious cinematic landscape"
 
-        # 3. Generate N-grams (1-word, 2-word, and 3-word phrases)
         candidates = []
         for n in range(1, 4):
             for i in range(len(filtered_words) - n + 1):
@@ -80,22 +75,15 @@ class StockEngine:
         if not candidates:
             return en_text, " ".join(filtered_words[:4])
 
-        # 4. AI Magic: Which phrase mathematically represents the whole sentence best?
         doc_emb = self.model.encode([en_text], convert_to_tensor=False).astype('float32')
         cand_embs = self.model.encode(candidates, convert_to_tensor=False).astype('float32')
         
         faiss.normalize_L2(doc_emb)
         faiss.normalize_L2(cand_embs)
         
-        # Dot product gives us the Cosine Similarity
         sims = np.dot(cand_embs, doc_emb.T).flatten()
-        
-        # 5. Pick the absolute best phrase!
         best_idx = np.argmax(sims)
         best_phrase = candidates[best_idx]
-        
-        print(f"🧠 [KeyBERT] Read: '{en_text}'")
-        print(f"🧠 [KeyBERT] Generated Search Query -> '{best_phrase}'")
         
         return en_text, best_phrase
 
@@ -140,6 +128,51 @@ class StockEngine:
         return valid_clips[0]
 
     # =====================================================
+    # 🌟 VISION-BASED DIVERSITY SELECTOR (YOUR BRILLIANT LOGIC)
+    # =====================================================
+    def _vision_diversity_selector(self, clips: List[Dict], base_english_query: str) -> List[Dict]:
+        """
+        Groups FAISS-scored clips by their 12 expanded queries, 
+        then uses CLIP Vision to physically look at the top candidates
+        and pick the absolute #1 best clip from each direction!
+        """
+        groups = {}
+        for c in clips:
+            key = f"{c['source']}_{c['query_used']}"
+            if key not in groups:
+                groups[key] = []
+            groups[key].append(c)
+
+        final_selection = []
+        
+        # Go through each of the different search directions
+        for key, group_clips in groups.items():
+            # Take top 4 FAISS candidates from this specific search direction
+            candidates = group_clips[:4]
+            
+            # 👁️ Let Vision AI look at these 4 and pick the ultimate winner!
+            winner = self._clip_visual_rerank(base_english_query, candidates)
+            
+            if winner and winner not in final_selection:
+                final_selection.append(winner)
+                
+            if len(final_selection) >= self.max_results:
+                break
+                
+        # Backfill just in case API didn't return enough varied groups
+        if len(final_selection) < self.max_results:
+            for c in clips:
+                if len(final_selection) >= self.max_results: break
+                if c not in final_selection:
+                    c['visual_score'] = 0.0
+                    c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | 👁️ Vision: FAISS-Fallback"
+                    final_selection.append(c)
+
+        # Re-sort the final 12 by their visual eye-score
+        final_selection.sort(key=lambda x: x.get('visual_score', 0), reverse=True)
+        return final_selection
+
+    # =====================================================
     # SCRIPT-TO-FOOTAGE PIPELINE
     # =====================================================
     def generate_video_timeline(self, script: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
@@ -149,11 +182,14 @@ class StockEngine:
         timeline = []
         for scene_text in scenes[:6]:
             full_en_text, search_query = self._extract_visual_keywords(scene_text)
-            candidates = self.execute_search(query=search_query, orientation=orientation, quality=quality)
+            candidates = self._execute_core_fetch(query=search_query, orientation=orientation, quality=quality)
             
             best_clip = None
             if candidates:
-                best_clip = self._clip_visual_rerank(full_en_text, candidates)
+                scored = self._faiss_semantic_score(candidates, full_en_text)
+                best_clip = self._clip_visual_rerank(full_en_text, scored[:8])
+                if best_clip:
+                    best_clip.pop("vector", None)
                 
             timeline.append({
                 "scene_text": scene_text,
@@ -166,22 +202,28 @@ class StockEngine:
     # SEARCH & FAISS CORE
     # =====================================================
     def execute_search(self, query: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
-        expanded = self._expand_query(query)
-        raw = self._fetch_all(expanded, orientation)
+        """Normal Search: Now fully powered by Vision AI for all 12 results."""
+        candidates = self._execute_core_fetch(query, orientation, quality)
+        if not candidates: return []
 
-        filtered = self._filter(raw, orientation, quality)
-        deduped = self._deduplicate(filtered)
-        
-        if not deduped: return []
-
-        scored = self._faiss_semantic_score(deduped, query)
+        full_en_text, _ = self._extract_visual_keywords(query)
+        scored = self._faiss_semantic_score(candidates, full_en_text)
         processed = self._detect_scenes(scored)
-        final_results = self._kmeans_diversity(processed)
+        
+        # Use the brilliant Vision Selector logic here!
+        final_results = self._vision_diversity_selector(processed, full_en_text)
 
         for c in final_results:
             c.pop("vector", None)
 
         return final_results[:self.max_results]
+
+    def _execute_core_fetch(self, query: str, orientation: str, quality: str) -> List[Dict]:
+        """Helper to handle fetching, filtering, and deduplication."""
+        expanded = self._expand_query(query)
+        raw = self._fetch_all(expanded, orientation)
+        filtered = self._filter(raw, orientation, quality)
+        return self._deduplicate(filtered)
 
     def _expand_query(self, q: str) -> Dict[str, List[str]]:
         q = q.lower().strip()
@@ -332,23 +374,3 @@ class StockEngine:
             c["scene_type"] = best_scene
             c["quality_label"] = f"{c['quality_label']} | {best_scene}"
         return clips
-
-    def _kmeans_diversity(self, clips):
-        if len(clips) <= self.max_results: return clips
-        X = np.array([c["vector"] for c in clips])
-        n_clusters = min(self.max_results, len(clips))
-        
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
-        cluster_labels = kmeans.fit_predict(X)
-
-        clusters_dict = {i: [] for i in range(n_clusters)}
-        for idx, label in enumerate(cluster_labels): clusters_dict[label].append(clips[idx])
-
-        final_selection = []
-        for label, cluster_clips in clusters_dict.items():
-            if cluster_clips:
-                cluster_clips.sort(key=lambda x: x["score"], reverse=True)
-                final_selection.append(cluster_clips[0])
-                
-        final_selection.sort(key=lambda x: x["score"], reverse=True)
-        return final_selection
