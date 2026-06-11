@@ -6,18 +6,19 @@ import hashlib
 import numpy as np
 import re
 import requests
+import cv2
 from PIL import Image
 from io import BytesIO
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer, util
 import faiss
+from sklearn.cluster import KMeans
 from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V6 (THE VISIONARY UPGRADE)
-    Normal Search now ALSO uses CLIP Vision to physically look at all candidates 
-    and pick the ultimate top 12 clips. No compromises.
+    🔥 StockClip Finder AI - Engine V7 (EXTREME VISION LEVEL)
+    Includes: KeyBERT, FAISS, KMeans, and Hybrid Multimodal Image/Video Streaming Reranker.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str):
@@ -33,7 +34,7 @@ class StockEngine:
         print("🚀 Loading Text AI Model (FAISS & KeyBERT)...")
         self.model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
         
-        print("👁️ Loading Vision AI Model (CLIP)...")
+        print("👁️ Loading Vision AI Model (CLIP Extreme)...")
         self.clip_model = SentenceTransformer("clip-ViT-B-32")
         
         self.scene_anchors = {
@@ -42,7 +43,7 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V6 (Full Vision Search) ready!")
+        print("✅ Engine V7 (Extreme Deep-Vision Enabled) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
@@ -88,92 +89,92 @@ class StockEngine:
         return en_text, best_phrase
 
     # =====================================================
-    # 👁️ CLIP MULTIMODAL RE-RANKER
+    # 👁️ HYBRID MULTIMODAL STREAMING GRABBER (THE MASTERSTROKE 🔥)
     # =====================================================
-    def _clip_visual_rerank(self, target_english_text: str, clips: List[Dict]) -> Dict:
-        if not clips: return None
+    def _fetch_visual_context(self, clip: Dict) -> tuple:
+        """
+        पहले थंबनेल डाउनलोड करने की कोशिश करता है।
+        अगर थंबनेल फेल होता है, तो सीधे वीडियो लिंक को स्ट्रीम करके बीच का स्क्रीनशॉट काट लेता है!
+        """
+        # Plan A: Try Thumbnail Fetch
+        try:
+            res = requests.get(clip['thumbnail'], timeout=3)
+            if res.status_code == 200:
+                img = Image.open(BytesIO(res.content)).convert("RGB")
+                return clip, img, "Thumbnail"
+        except Exception:
+            pass
+        
+        # Plan B: OpenCV Direct URL Video Streaming Grabber (No full download!)
+        try:
+            video_url = clip['download_url']
+            cap = cv2.VideoCapture(video_url)
+            if cap.isOpened():
+                total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                # ब्लैक स्क्रीन से बचने के लिए वीडियो के 25% हिस्से पर कूदें
+                if total_frames > 24:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, int(total_frames * 0.25))
+                
+                ret, frame = cap.read()
+                cap.release()
+                
+                if ret:
+                    # OpenCV BGR को PIL RGB में बदलें
+                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img = Image.fromarray(frame_rgb)
+                    return clip, img, "VideoFrame"
+        except Exception as e:
+            print(f"[OpenCV Stream Error] Failed for {clip['id']}: {e}")
+            
+        return clip, None, "Failed"
+
+    def _batch_vision_score(self, target_english_text: str, clips: List[Dict]) -> List[Dict]:
+        if not clips: return []
         
         valid_clips = []
+        failed_clips = []
         images = []
         
-        def fetch_img(c):
-            try:
-                res = requests.get(c['thumbnail'], timeout=3)
-                img = Image.open(BytesIO(res.content)).convert("RGB")
-                return c, img
-            except Exception:
-                return None, None
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
-            results = ex.map(fetch_img, clips[:8])
+        # समानांतर (Parallel) थंबनेल और वीडियो स्ट्रीमिंग प्रोसेसिंग
+        with concurrent.futures.ThreadPoolExecutor(max_workers=12) as ex:
+            results = ex.map(self._fetch_visual_context, clips)
             
-        for c, img in results:
+        for c, img, source_type in results:
             if img is not None:
-                valid_clips.append(c)
+                valid_clips.append((c, source_type))
                 images.append(img)
+            else:
+                # यदि दोनों तरीके फेल हो जाएं (सख्त सुरक्षा)
+                c['visual_score'] = 0.0
+                c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | ❌ Vision: Failed"
+                c['score'] = round(c['score'] * 0.3) # स्कोर गिरा दें
+                failed_clips.append(c)
                 
         if not valid_clips:
-            return clips[0] 
+            return clips 
             
+        # CLIP AI Scoring
         img_embeddings = self.clip_model.encode(images, convert_to_tensor=True)
         txt_embedding = self.clip_model.encode([target_english_text], convert_to_tensor=True)
         
         sims = util.cos_sim(txt_embedding, img_embeddings)[0].cpu().tolist()
         
-        for i, c in enumerate(valid_clips):
-            c['visual_score'] = round(sims[i] * 100, 2)
-            c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | 👁️ Vision: {c['visual_score']}%"
+        for i, (c, source_type) in enumerate(valid_clips):
+            vision_score = max(0.0, sims[i])
+            c['visual_score'] = round(vision_score * 100, 2)
             
-        valid_clips.sort(key=lambda x: x['visual_score'], reverse=True)
-        return valid_clips[0]
+            # UI पर साफ़ दिखाएं कि AI ने फोटो जाँची या असली वीडियो फ्रेम!
+            c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | {source_type}: {c['visual_score']}%"
+            
+            # 60% वज़न विज़न स्कोर को, 40% टेक्स्ट को
+            c['score'] = min(round((c['score'] * 0.4) + (c['visual_score'] * 0.6)), 100)
+            
+        all_scored_clips = [item[0] for item in valid_clips] + failed_clips
+        all_scored_clips.sort(key=lambda x: x['score'], reverse=True)
+        return all_scored_clips
 
     # =====================================================
-    # 🌟 VISION-BASED DIVERSITY SELECTOR (YOUR BRILLIANT LOGIC)
-    # =====================================================
-    def _vision_diversity_selector(self, clips: List[Dict], base_english_query: str) -> List[Dict]:
-        """
-        Groups FAISS-scored clips by their 12 expanded queries, 
-        then uses CLIP Vision to physically look at the top candidates
-        and pick the absolute #1 best clip from each direction!
-        """
-        groups = {}
-        for c in clips:
-            key = f"{c['source']}_{c['query_used']}"
-            if key not in groups:
-                groups[key] = []
-            groups[key].append(c)
-
-        final_selection = []
-        
-        # Go through each of the different search directions
-        for key, group_clips in groups.items():
-            # Take top 4 FAISS candidates from this specific search direction
-            candidates = group_clips[:4]
-            
-            # 👁️ Let Vision AI look at these 4 and pick the ultimate winner!
-            winner = self._clip_visual_rerank(base_english_query, candidates)
-            
-            if winner and winner not in final_selection:
-                final_selection.append(winner)
-                
-            if len(final_selection) >= self.max_results:
-                break
-                
-        # Backfill just in case API didn't return enough varied groups
-        if len(final_selection) < self.max_results:
-            for c in clips:
-                if len(final_selection) >= self.max_results: break
-                if c not in final_selection:
-                    c['visual_score'] = 0.0
-                    c['quality_label'] = f"{c['quality_label'].split(' | ')[0]} | 👁️ Vision: FAISS-Fallback"
-                    final_selection.append(c)
-
-        # Re-sort the final 12 by their visual eye-score
-        final_selection.sort(key=lambda x: x.get('visual_score', 0), reverse=True)
-        return final_selection
-
-    # =====================================================
-    # SCRIPT-TO-FOOTAGE PIPELINE
+    # SCRIPT-TO-FOOTAGE PIPELINE (AUTO-PILOT)
     # =====================================================
     def generate_video_timeline(self, script: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
         raw_scenes = re.split(r'[.।|\n]+', script)
@@ -182,53 +183,52 @@ class StockEngine:
         timeline = []
         for scene_text in scenes[:6]:
             full_en_text, search_query = self._extract_visual_keywords(scene_text)
-            candidates = self._execute_core_fetch(query=search_query, orientation=orientation, quality=quality)
+            candidates = self.execute_search(query=search_query, orientation=orientation, quality=quality, full_context=full_en_text)
             
-            best_clip = None
-            if candidates:
-                scored = self._faiss_semantic_score(candidates, full_en_text)
-                best_clip = self._clip_visual_rerank(full_en_text, scored[:8])
-                if best_clip:
-                    best_clip.pop("vector", None)
-                
             timeline.append({
                 "scene_text": scene_text,
-                "clip": best_clip
+                "clip": candidates[0] if candidates else None
             })
             
         return timeline
 
     # =====================================================
-    # SEARCH & FAISS CORE
+    # MAIN SEARCH PIPELINE (NOW WITH ULTRA-VISION 👁️)
     # =====================================================
-    def execute_search(self, query: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
-        """Normal Search: Now fully powered by Vision AI for all 12 results."""
-        candidates = self._execute_core_fetch(query, orientation, quality)
-        if not candidates: return []
+    def execute_search(self, query: str, orientation: str, quality: str, full_context: str = None) -> List[Dict[str, Any]]:
+        if not full_context:
+            try: full_context = GoogleTranslator(source='auto', target='en').translate(query)
+            except: full_context = query
+                
+        expanded = self._expand_query(query)
+        raw = self._fetch_all(expanded, orientation)
 
-        full_en_text, _ = self._extract_visual_keywords(query)
-        scored = self._faiss_semantic_score(candidates, full_en_text)
-        processed = self._detect_scenes(scored)
+        filtered = self._filter(raw, orientation, quality)
+        deduped = self._deduplicate(filtered)
         
-        # Use the brilliant Vision Selector logic here!
-        final_results = self._vision_diversity_selector(processed, full_en_text)
+        if not deduped: return []
+
+        scored_text = self._faiss_semantic_score(deduped, query)
+        
+        # टॉप 24 वीडियो को विज़न री-रैंकिंग के लिए भेजें
+        top_candidates = scored_text[:24]
+        vision_verified = self._batch_vision_score(target_english_text=full_context, clips=top_candidates)
+        
+        processed = self._detect_scenes(vision_verified)
+        final_results = self._kmeans_diversity(processed)
 
         for c in final_results:
             c.pop("vector", None)
 
         return final_results[:self.max_results]
 
-    def _execute_core_fetch(self, query: str, orientation: str, quality: str) -> List[Dict]:
-        """Helper to handle fetching, filtering, and deduplication."""
-        expanded = self._expand_query(query)
-        raw = self._fetch_all(expanded, orientation)
-        filtered = self._filter(raw, orientation, quality)
-        return self._deduplicate(filtered)
-
+    # =====================================================
+    # FETCHING & UTILITIES
+    # =====================================================
     def _expand_query(self, q: str) -> Dict[str, List[str]]:
         q = q.lower().strip()
-        base_sets = [q, f"{q} cinematic", f"{q} documentary", f"{q} aerial", f"{q} wide shot", f"{q} dramatic"]
-        alt_sets = [f"{q} ruins", f"{q} nature", f"{q} landscape", f"{q} exploration", f"{q} mystery", f"{q} background"]
+        base_sets = [q, f"{q} cinematic", f"{q} documentary", f"{q} wide shot", f"{q} dramatic", f"{q} 4k"]
+        alt_sets = [f"{q} background", f"{q} concept", f"{q} visualization", f"{q} motion", f"{q} abstract", f"{q} digital"]
         return {"pexels": base_sets[:6], "pixabay": alt_sets[:6]}
 
     def _fetch_all(self, expanded: Dict[str, List[str]], orientation: str):
@@ -354,7 +354,6 @@ class StockEngine:
 
             final = (sim * 0.50) + (res_score * 0.20) + (eng * 0.20) + (duration_score * 0.10)
             c["score"] = min(round(final * 100), 100)
-            c["ai_similarity"] = round(sim * 100, 2)
             c['quality_label'] = "4K" if h >= 2160 else ("1080p" if h >= 1080 else "720p")
             c['aspect_ratio'] = f"{c['width']}x{c['height']}"
             scored.append(c)
@@ -372,5 +371,24 @@ class StockEngine:
                 if sim > highest_sim and sim > 0.25:
                     highest_sim, best_scene = sim, scene_name
             c["scene_type"] = best_scene
-            c["quality_label"] = f"{c['quality_label']} | {best_scene}"
         return clips
+
+    def _kmeans_diversity(self, clips):
+        if len(clips) <= self.max_results: return clips
+        X = np.array([c["vector"] for c in clips])
+        n_clusters = min(self.max_results, len(clips))
+        
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init="auto")
+        cluster_labels = kmeans.fit_predict(X)
+
+        clusters_dict = {i: [] for i in range(n_clusters)}
+        for idx, label in enumerate(cluster_labels): clusters_dict[label].append(clips[idx])
+
+        final_selection = []
+        for label, cluster_clips in clusters_dict.items():
+            if cluster_clips:
+                cluster_clips.sort(key=lambda x: x["score"], reverse=True)
+                final_selection.append(cluster_clips[0])
+                
+        final_selection.sort(key=lambda x: x["score"], reverse=True)
+        return final_selection
