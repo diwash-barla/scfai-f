@@ -6,3 +6,5 @@ faiss-cpu
 scikit-learn==1.4.1.post1
 numpy
 deep-translator
+Pillow
+requests
