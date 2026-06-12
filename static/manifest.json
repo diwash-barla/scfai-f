@@ -1,0 +1,17 @@
+{
+  "name": "StockClip AI Pro",
+  "short_name": "StockClip",
+  "description": "Enterprise Grade AI Video Intelligence System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/7143/7143525.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
