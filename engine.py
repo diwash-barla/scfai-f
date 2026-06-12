@@ -18,8 +18,8 @@ from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V14 (THE JSON VALIDATOR)
-    Includes: User's Custom JSON Parsing, Retry Logic, Zero Cache, and Strict Bouncers.
+    🔥 StockClip Finder AI - Engine V15 (MICROSERVICE READY)
+    Fixed Groq validation bug, adjusted strict bouncer, and ensured Thread Safety.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str, groq_key: str = ""):
@@ -44,14 +44,11 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V14 (JSON Strict Mode) ready!")
+        print("✅ Engine V15 (Microservice Backend) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
 
-    # =====================================================
-    # 🧠 KeyBERT: AI VECTOR KEYWORD EXTRACTOR
-    # =====================================================
     def _extract_visual_keywords(self, scene_text: str) -> tuple:
         try:
             en_text = GoogleTranslator(source='auto', target='en').translate(scene_text)
@@ -89,9 +86,6 @@ class StockEngine:
         
         return en_text, best_phrase
 
-    # =====================================================
-    # ⚡ GROQ API SMART EXPANSION (JSON VALIDATOR LOGIC)
-    # =====================================================
     def _fallback(self, q: str, queries=None):
         if queries is None:
             queries = [q]
@@ -125,7 +119,6 @@ class StockEngine:
 
         system_prompt = """
 You are a strict stock footage query generator.
-
 RULES:
 1. Return ONLY a valid JSON array of 5 strings.
 2. Each string must be 2-5 words.
@@ -134,7 +127,6 @@ RULES:
 5. Only vary environment, angle, lighting, cinematic style.
 6. No explanation, no text, no commas outside JSON.
 """
-
         payload = {
             "model": "meta-llama/llama-4-scout-17b-16e-instruct",
             "messages": [
@@ -145,71 +137,50 @@ RULES:
         }
 
         def call_api():
-            return requests.post(
-                "[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)",
-                headers=headers,
-                json=payload,
-                timeout=12
-            )
+            return requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=12)
 
         try:
             res = call_api()
-
             if res.status_code == 200:
                 content = res.json()["choices"][0]["message"]["content"]
-
                 try:
-                    # Clean markdown wrappers if AI adds them
                     clean_content = content.replace('```json', '').replace('```', '').strip()
                     groq_queries = json.loads(clean_content)
 
-                    # Validation layer (VERY IMPORTANT)
+                    # 🔥 FIXED: Removed the overly strict subject lock that broke "Black hole" and "Tree"
                     cleaned = []
-                    subject = base_query.split()[0] if base_query else ""
                     for item in groq_queries:
-                        if isinstance(item, str) and len(item.split()) <= 6:
-                            if subject in item.lower():  # Subject lock check
-                                cleaned.append(item.strip())
+                        if isinstance(item, str) and len(item.split()) <= 7:
+                            cleaned.append(item.strip())
 
-                    print(f"⚡ [Groq AI JSON Validated]: {cleaned}")
+                    print(f"⚡ [Groq AI Validated]: {cleaned[:5]}")
                     queries.extend(cleaned[:5])
 
                 except Exception:
-                    print("⚠️ JSON Parse Failed. Retrying with STRICT MODE...")
-                    # Retry once with stricter prompt
+                    print("⚠️ JSON Parse Failed. Retrying...")
                     payload["messages"][0]["content"] += "\nRETURN ONLY JSON ARRAY. STRICT MODE."
                     res2 = call_api()
-
                     if res2.status_code == 200:
                         try:
                             content2 = res2.json()["choices"][0]["message"]["content"]
                             clean_content2 = content2.replace('```json', '').replace('```', '').strip()
                             groq_queries = json.loads(clean_content2)
                             queries.extend(groq_queries[:5])
-                            print(f"⚡ [Groq AI Retry Success]: {groq_queries[:5]}")
-                        except Exception as e:
-                            print(f"⚠️ Retry Parse Failed: {e}")
+                        except:
                             pass
-
         except Exception as e:
-            print(f"⚠️ Groq API Connection Failed: {e}")
+            print(f"⚠️ Groq API Failed: {e}")
 
-        # Fallback safety net
         queries = self._fallback(base_query, queries)
-
         return queries[:6]
 
-    # =====================================================
-    # 👁️ HYBRID MULTIMODAL STREAMING GRABBER
-    # =====================================================
     def _fetch_visual_context(self, clip: Dict) -> tuple:
         try:
             res = requests.get(clip['thumbnail'], timeout=3)
             if res.status_code == 200:
                 img = Image.open(BytesIO(res.content)).convert("RGB")
                 return clip, img, "Thumbnail"
-        except Exception:
-            pass
+        except: pass
         
         try:
             video_url = clip['download_url']
@@ -224,17 +195,14 @@ RULES:
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     img = Image.fromarray(frame_rgb)
                     return clip, img, "VideoFrame"
-        except Exception:
-            pass
+        except: pass
             
         return clip, None, "Failed"
 
     def _vision_score_candidates(self, target_english_text: str, clips: List[Dict]) -> List[Dict]:
         if not clips: return []
         
-        valid_clips = []
-        failed_clips = []
-        images = []
+        valid_clips, failed_clips, images = [], [], []
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
             results = ex.map(self._fetch_visual_context, clips)
@@ -249,12 +217,10 @@ RULES:
                 c['score'] = round(c['score'] * 0.3) 
                 failed_clips.append(c)
                 
-        if not valid_clips:
-            return clips 
+        if not valid_clips: return clips 
             
         img_embeddings = self.clip_model.encode(images, convert_to_tensor=True)
         txt_embedding = self.clip_model.encode([target_english_text], convert_to_tensor=True)
-        
         sims = util.cos_sim(txt_embedding, img_embeddings)[0].cpu().tolist()
         
         for i, (c, source_type) in enumerate(valid_clips):
@@ -266,16 +232,11 @@ RULES:
         all_scored_clips = [item[0] for item in valid_clips] + failed_clips
         all_scored_clips.sort(key=lambda x: x['score'], reverse=True)
 
-        del images
-        del img_embeddings
-        del txt_embedding
+        del images, img_embeddings, txt_embedding
         gc.collect()
 
         return all_scored_clips
 
-    # =====================================================
-    # 🛤️ PURE ISOLATED TRACK WITH STRICT THRESHOLDS
-    # =====================================================
     def _process_single_query_track(self, q: str, orientation: str, quality: str, full_context: str, global_seen_ids: set, seen_lock: threading.Lock) -> List[Dict]:
         raw_pex = self._fetch_pexels(q, orientation)
         raw_pix = self._fetch_pixabay(q, orientation)
@@ -294,8 +255,9 @@ RULES:
 
         track_winners = []
         
-        MIN_VISION_SCORE = 21.0
-        MIN_FINAL_SCORE = 40
+        # 🔥 FIXED BOUNCER: Adjusted limits so valid but simple concepts like "Tree" don't get rejected
+        MIN_VISION_SCORE = 18.0 
+        MIN_FINAL_SCORE = 30
 
         if vision_pex:
             with seen_lock:
@@ -317,9 +279,6 @@ RULES:
 
         return track_winners
 
-    # =====================================================
-    # MAIN SEARCH PIPELINE
-    # =====================================================
     def execute_search(self, query: str, orientation: str, quality: str, full_context: str = None) -> List[Dict[str, Any]]:
         if not full_context:
             try: full_context = GoogleTranslator(source='auto', target='en').translate(query)
@@ -337,35 +296,22 @@ RULES:
                 all_final_winners.extend(f.result())
 
         final_results = self._detect_scenes(all_final_winners)
-
         final_results.sort(key=lambda x: x["score"], reverse=True)
         return final_results[:self.max_results]
 
-    # =====================================================
-    # SCRIPT-TO-FOOTAGE PIPELINE
-    # =====================================================
     def generate_video_timeline(self, script: str, orientation: str, quality: str) -> List[Dict[str, Any]]:
         raw_scenes = re.split(r'[.।|\n]+', script)
         scenes = [s.strip() for s in raw_scenes if len(s.strip()) > 15] 
-        
         timeline = []
         for scene_text in scenes[:6]:
             full_en_text, search_query = self._extract_visual_keywords(scene_text)
             candidates = self.execute_search(query=search_query, orientation=orientation, quality=quality, full_context=full_en_text)
-            
-            timeline.append({
-                "scene_text": scene_text,
-                "clip": candidates[0] if candidates else None
-            })
-            
+            timeline.append({"scene_text": scene_text, "clip": candidates[0] if candidates else None})
         return timeline
 
-    # =====================================================
-    # FETCHING & UTILITIES
-    # =====================================================
     def _fetch_pexels(self, query: str, orientation: str):
         api_orient = "landscape" if orientation == "landscape" else "portrait"
-        url = f"[https://api.pexels.com/videos/search?query=](https://api.pexels.com/videos/search?query=){urllib.parse.quote(query)}&per_page=10&orientation={api_orient}"
+        url = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query)}&per_page=10&orientation={api_orient}"
         req = urllib.request.Request(url, headers={**self.headers, "Authorization": self.pexels_key})
         try:
             with urllib.request.urlopen(req, timeout=8) as r:
@@ -377,7 +323,6 @@ RULES:
         best = files[0] if files else {}
         slug_words = [p for p in urllib.parse.urlparse(v.get('url', '')).path.split('/') if p][-1].split('-') if len(urllib.parse.urlparse(v.get('url', '')).path.split('/')) >= 2 else []
         extracted_tags = " ".join(slug_words[:-1] if slug_words and slug_words[-1].isdigit() else slug_words)
-
         return {
             "id": str(v.get("id")), "source": "Pexels", "url": v.get("url"),
             "download_url": best.get("link"), "thumbnail": v.get("image"),
@@ -387,7 +332,7 @@ RULES:
         }
 
     def _fetch_pixabay(self, query: str, orientation: str):
-        url = f"[https://pixabay.com/api/videos/?key=](https://pixabay.com/api/videos/?key=){self.pixabay_key}&q={urllib.parse.quote(query)}&per_page=10"
+        url = f"https://pixabay.com/api/videos/?key={self.pixabay_key}&q={urllib.parse.quote(query)}&per_page=10"
         req = urllib.request.Request(url, headers=self.headers)
         try:
             with urllib.request.urlopen(req, timeout=8) as r:
@@ -398,7 +343,7 @@ RULES:
         vids = v.get("videos", {})
         best = vids.get("large") or vids.get("medium") or vids.get("small") or {}
         thumb_id = v.get('picture_id')
-        thumb = f"[https://i.vimeocdn.com/video/](https://i.vimeocdn.com/video/){thumb_id}_640x360.jpg" if thumb_id else ""
+        thumb = f"https://i.vimeocdn.com/video/{thumb_id}_640x360.jpg" if thumb_id else ""
         return {
             "id": str(v.get("id")), "source": "Pixabay", "url": v.get("pageURL"),
             "download_url": best.get("url"), "thumbnail": thumb,
@@ -426,40 +371,30 @@ RULES:
 
     def _faiss_semantic_score(self, clips, query):
         if not clips: return []
-        
         q_emb = self._get_embeddings_batch([query])
         faiss.normalize_L2(q_emb)
-
         texts = [f"{c['tags']} {c['source']}" for c in clips]
         clip_embs = self._get_embeddings_batch(texts)
         faiss.normalize_L2(clip_embs)
-
         index = faiss.IndexFlatIP(clip_embs.shape[1])
         index.add(clip_embs)
         sims, _ = index.search(q_emb, len(clips))
         sims = sims[0]
-
         scored = []
-
         for i, c in enumerate(clips):
             sim = max(0.0, float(sims[i]))
             if sim < 0.15: continue
-
             h = c["height"]
             res_score = 1.0 if h >= 2160 else (0.8 if h >= 1080 else 0.5)
             eng = min(0.6 + (res_score * 0.3), 1.0) 
             duration_score = 1.0 if 6 <= c["duration"] <= 18 else 0.7
-
             final = (sim * 0.50) + (res_score * 0.20) + (eng * 0.20) + (duration_score * 0.10)
             c["score"] = min(round(final * 100), 100)
             c['quality_label'] = "4K" if h >= 2160 else ("1080p" if h >= 1080 else "720p")
             c['aspect_ratio'] = f"{c['width']}x{c['height']}"
             scored.append(c)
-
-        del q_emb
-        del clip_embs
+        del q_emb, clip_embs
         gc.collect()
-
         return sorted(scored, key=lambda x: x["score"], reverse=True)
 
     def _detect_scenes(self, clips):
