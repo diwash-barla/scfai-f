@@ -18,8 +18,8 @@ from deep_translator import GoogleTranslator
 
 class StockEngine:
     """
-    🔥 StockClip Finder AI - Engine V13 (STRICT QUALITY BOUNCER)
-    Includes: Zero Cache, Isolated Pipelines, Global Lock, and Strict Passing Marks.
+    🔥 StockClip Finder AI - Engine V14 (THE JSON VALIDATOR)
+    Includes: User's Custom JSON Parsing, Retry Logic, Zero Cache, and Strict Bouncers.
     """
 
     def __init__(self, pexels_key: str, pixabay_key: str, groq_key: str = ""):
@@ -44,7 +44,7 @@ class StockEngine:
             "Timelapse": self.model.encode("timelapse fast motion clouds passing time", convert_to_tensor=False),
             "Cinematic": self.model.encode("cinematic depth of field moody dramatic lighting", convert_to_tensor=False)
         }
-        print("✅ Engine V13 (Strict Quality Thresholds) ready!")
+        print("✅ Engine V14 (JSON Strict Mode) ready!")
 
     def has_keys(self) -> bool:
         return bool(self.pexels_key and self.pixabay_key)
@@ -90,39 +90,112 @@ class StockEngine:
         return en_text, best_phrase
 
     # =====================================================
-    # ⚡ GROQ API SMART EXPANSION
+    # ⚡ GROQ API SMART EXPANSION (JSON VALIDATOR LOGIC)
     # =====================================================
+    def _fallback(self, q: str, queries=None):
+        if queries is None:
+            queries = [q]
+
+        fallbacks = [
+            f"{q} cinematic shot",
+            f"{q} 4k ultra hd",
+            f"{q} slow motion",
+            f"{q} wide angle view",
+            f"{q} natural lighting"
+        ]
+
+        for fb in fallbacks:
+            if len(queries) < 6:
+                queries.append(fb)
+
+        return queries[:6]
+
     def _expand_query(self, q: str) -> List[str]:
         q = q.lower().strip()
-        queries = [q] 
-        
-        if self.groq_key:
-            try:
-                headers = {
-                    "Authorization": f"Bearer {self.groq_key}",
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "model": "meta-llama/llama-4-scout-17b-16e-instruct", 
-                    "messages": [
-                        {"role": "system", "content": "You are an expert stock footage researcher. Given a visual scene, generate exactly 5 highly distinct, optimized search queries (2-4 words each) to find stock footage on Pexels/Pixabay. Return ONLY a comma-separated list of the 5 queries. No numbers, no intro."},
-                        {"role": "user", "content": f"Scene: {q}"}
-                    ],
-                    "temperature": 0.7
-                }
-                res = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=5)
-                if res.status_code == 200:
-                    content = res.json()["choices"][0]["message"]["content"]
-                    groq_queries = [x.strip().strip('"').strip("'") for x in content.split(',') if len(x.strip()) > 2]
-                    print(f"⚡ [Groq AI] Generated Queries: {groq_queries}")
-                    queries.extend(groq_queries[:5])
-            except Exception as e:
-                print(f"⚠️ Groq Expansion Failed: {e}")
+        base_query = q
+        queries = [base_query]
 
-        if len(queries) < 6:
-            fallbacks = [f"{q} cinematic", f"{q} wide shot", f"{q} dramatic", f"{q} 4k", f"{q} abstract"]
-            for fb in fallbacks:
-                if len(queries) < 6: queries.append(fb)
+        if not self.groq_key:
+            return self._fallback(base_query)
+
+        headers = {
+            "Authorization": f"Bearer {self.groq_key}",
+            "Content-Type": "application/json"
+        }
+
+        system_prompt = """
+You are a strict stock footage query generator.
+
+RULES:
+1. Return ONLY a valid JSON array of 5 strings.
+2. Each string must be 2-5 words.
+3. DO NOT change the core subject of the scene.
+4. If subject includes an object (dog, man, car), EVERY query MUST include it.
+5. Only vary environment, angle, lighting, cinematic style.
+6. No explanation, no text, no commas outside JSON.
+"""
+
+        payload = {
+            "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Scene: {q}"}
+            ],
+            "temperature": 0.3
+        }
+
+        def call_api():
+            return requests.post(
+                "[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)",
+                headers=headers,
+                json=payload,
+                timeout=12
+            )
+
+        try:
+            res = call_api()
+
+            if res.status_code == 200:
+                content = res.json()["choices"][0]["message"]["content"]
+
+                try:
+                    # Clean markdown wrappers if AI adds them
+                    clean_content = content.replace('```json', '').replace('```', '').strip()
+                    groq_queries = json.loads(clean_content)
+
+                    # Validation layer (VERY IMPORTANT)
+                    cleaned = []
+                    subject = base_query.split()[0] if base_query else ""
+                    for item in groq_queries:
+                        if isinstance(item, str) and len(item.split()) <= 6:
+                            if subject in item.lower():  # Subject lock check
+                                cleaned.append(item.strip())
+
+                    print(f"⚡ [Groq AI JSON Validated]: {cleaned}")
+                    queries.extend(cleaned[:5])
+
+                except Exception:
+                    print("⚠️ JSON Parse Failed. Retrying with STRICT MODE...")
+                    # Retry once with stricter prompt
+                    payload["messages"][0]["content"] += "\nRETURN ONLY JSON ARRAY. STRICT MODE."
+                    res2 = call_api()
+
+                    if res2.status_code == 200:
+                        try:
+                            content2 = res2.json()["choices"][0]["message"]["content"]
+                            clean_content2 = content2.replace('```json', '').replace('```', '').strip()
+                            groq_queries = json.loads(clean_content2)
+                            queries.extend(groq_queries[:5])
+                            print(f"⚡ [Groq AI Retry Success]: {groq_queries[:5]}")
+                        except Exception as e:
+                            print(f"⚠️ Retry Parse Failed: {e}")
+                            pass
+
+        except Exception as e:
+            print(f"⚠️ Groq API Connection Failed: {e}")
+
+        # Fallback safety net
+        queries = self._fallback(base_query, queries)
 
         return queries[:6]
 
@@ -193,7 +266,6 @@ class StockEngine:
         all_scored_clips = [item[0] for item in valid_clips] + failed_clips
         all_scored_clips.sort(key=lambda x: x['score'], reverse=True)
 
-        # Cleanup RAM
         del images
         del img_embeddings
         del txt_embedding
@@ -222,33 +294,26 @@ class StockEngine:
 
         track_winners = []
         
-        # 🔥 THE BOUNCER: Minimum Passing Marks!
         MIN_VISION_SCORE = 21.0
         MIN_FINAL_SCORE = 40
 
         if vision_pex:
             with seen_lock:
                 for vp in vision_pex:
-                    # सिर्फ तभी पास होगा जब स्कोर लिमिट से ऊपर हो!
                     if vp['visual_score'] >= MIN_VISION_SCORE and vp['score'] >= MIN_FINAL_SCORE:
                         if vp['id'] not in global_seen_ids:
                             global_seen_ids.add(vp['id']) 
                             track_winners.append(vp)
                             break
-                    else:
-                        print(f"🚫 Rejected Pexels Trash for '{q}': Vision {vp['visual_score']}%")
 
         if vision_pix:
             with seen_lock:
                 for vp in vision_pix:
-                    # सिर्फ तभी पास होगा जब स्कोर लिमिट से ऊपर हो!
                     if vp['visual_score'] >= MIN_VISION_SCORE and vp['score'] >= MIN_FINAL_SCORE:
                         if vp['id'] not in global_seen_ids:
                             global_seen_ids.add(vp['id']) 
                             track_winners.append(vp)
                             break
-                    else:
-                        print(f"🚫 Rejected Pixabay Trash for '{q}': Vision {vp['visual_score']}%")
 
         return track_winners
 
@@ -300,7 +365,7 @@ class StockEngine:
     # =====================================================
     def _fetch_pexels(self, query: str, orientation: str):
         api_orient = "landscape" if orientation == "landscape" else "portrait"
-        url = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query)}&per_page=10&orientation={api_orient}"
+        url = f"[https://api.pexels.com/videos/search?query=](https://api.pexels.com/videos/search?query=){urllib.parse.quote(query)}&per_page=10&orientation={api_orient}"
         req = urllib.request.Request(url, headers={**self.headers, "Authorization": self.pexels_key})
         try:
             with urllib.request.urlopen(req, timeout=8) as r:
@@ -322,7 +387,7 @@ class StockEngine:
         }
 
     def _fetch_pixabay(self, query: str, orientation: str):
-        url = f"https://pixabay.com/api/videos/?key={self.pixabay_key}&q={urllib.parse.quote(query)}&per_page=10"
+        url = f"[https://pixabay.com/api/videos/?key=](https://pixabay.com/api/videos/?key=){self.pixabay_key}&q={urllib.parse.quote(query)}&per_page=10"
         req = urllib.request.Request(url, headers=self.headers)
         try:
             with urllib.request.urlopen(req, timeout=8) as r:
@@ -333,7 +398,7 @@ class StockEngine:
         vids = v.get("videos", {})
         best = vids.get("large") or vids.get("medium") or vids.get("small") or {}
         thumb_id = v.get('picture_id')
-        thumb = f"https://i.vimeocdn.com/video/{thumb_id}_640x360.jpg" if thumb_id else ""
+        thumb = f"[https://i.vimeocdn.com/video/](https://i.vimeocdn.com/video/){thumb_id}_640x360.jpg" if thumb_id else ""
         return {
             "id": str(v.get("id")), "source": "Pixabay", "url": v.get("pageURL"),
             "download_url": best.get("url"), "thumbnail": thumb,
