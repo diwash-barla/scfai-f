@@ -1,69 +1,66 @@
 import os
-import logging
-import uuid
-import threading
-from flask import Flask, request, jsonify
-from engine import StockEngine
+import requests
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# Initialize Frontend Flask App
+app = Flask(__name__, static_folder='static', template_folder='templates')
+CORS(app)
 
-app = Flask(__name__)
+# 🔒 Secrets stored securely in Vercel environment variables
+BACKEND_URL = os.environ.get("BACKEND_URL", "https://your-private-space-name.hf.space")
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
 
-# Initialize the Engine
-pexels_key = os.environ.get("PEXELS_API_KEY", "")
-pixabay_key = os.environ.get("PIXABAY_API_KEY", "")
-groq_key = os.environ.get("GROQ_API_KEY", "") 
-
-stock_engine = StockEngine(pexels_key=pexels_key, pixabay_key=pixabay_key, groq_key=groq_key)
-
-# In-Memory Task Queue
-tasks = {}
-
-def background_worker(task_id: str, mode: str, query: str, orientation: str, quality: str):
-    """Background thread to process AI tasks without blocking the API."""
+def forward_to_backend(endpoint, method='POST', json_data=None):
+    """Securely forwards requests to the private HF backend using the HF Token."""
+    headers = {
+        "Authorization": f"Bearer {HF_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    url = f"{BACKEND_URL.rstrip('/')}/{endpoint}"
+    
     try:
-        if mode == 'search':
-            results = stock_engine.execute_search(query=query, orientation=orientation, quality=quality)
-            tasks[task_id] = {"status": "completed", "data": results, "count": len(results)}
-        elif mode == 'timeline':
-            results = stock_engine.generate_video_timeline(script=query, orientation=orientation, quality=quality)
-            tasks[task_id] = {"status": "completed", "data": results, "scene_count": len(results)}
+        if method == 'POST':
+            # Timeout is small because backend returns a task_id immediately
+            response = requests.post(url, headers=headers, json=json_data, timeout=10)
+        else:
+            response = requests.get(url, headers=headers, timeout=10)
+            
+        return jsonify(response.json()), response.status_code
+        
     except Exception as e:
-        logger.exception(f"Task Failed: {e}")
-        tasks[task_id] = {"status": "error", "error": str(e)}
+        return jsonify({"success": False, "error": f"Frontend Proxy Error: {str(e)}"}), 500
 
+# ==========================================
+# 🌐 UI Routing (Serves HTML & PWA Files)
+# ==========================================
+@app.route('/')
+def serve_index():
+    # Will serve index.html from a /templates folder
+    return send_from_directory('templates', 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static_files(filename):
+    # Will serve manifest.json, sw.js, icons from a /static folder
+    return send_from_directory('static', filename)
+
+# ==========================================
+# 🔄 API Proxy Routes (Hides the Token)
+# ==========================================
 @app.route('/api/search', methods=['POST'])
-def api_search():
-    data = request.get_json()
-    task_id = str(uuid.uuid4())
-    tasks[task_id] = {"status": "processing"}
-    
-    thread = threading.Thread(target=background_worker, args=(task_id, 'search', data.get('query'), data.get('orientation'), data.get('quality')))
-    thread.start()
-    
-    return jsonify({"success": True, "task_id": task_id}), 202
+def proxy_search():
+    return forward_to_backend('api/search', method='POST', json_data=request.get_json())
 
 @app.route('/api/timeline', methods=['POST'])
-def api_timeline():
-    data = request.get_json()
-    task_id = str(uuid.uuid4())
-    tasks[task_id] = {"status": "processing"}
-    
-    thread = threading.Thread(target=background_worker, args=(task_id, 'timeline', data.get('script'), data.get('orientation'), data.get('quality')))
-    thread.start()
-    
-    return jsonify({"success": True, "task_id": task_id}), 202
+def proxy_timeline():
+    return forward_to_backend('api/timeline', method='POST', json_data=request.get_json())
 
 @app.route('/api/status/<task_id>', methods=['GET'])
-def api_status(task_id):
-    task = tasks.get(task_id)
-    if not task:
-        return jsonify({"success": False, "error": "Invalid Task ID."}), 404
-    return jsonify({"success": True, "task": task}), 200
+def proxy_status(task_id):
+    return forward_to_backend(f'api/status/{task_id}', method='GET')
 
 if __name__ == '__main__':
-    print("Starting Private Backend Microservice...")
-    # HF Spaces requires port 7860
-    app.run(host='0.0.0.0', port=7860, debug=False, threaded=True)
+    print("Starting Public Frontend Proxy Server...")
+    # Render/Vercel handles ports dynamically via PORT env variable
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)
