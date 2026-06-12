@@ -29,7 +29,12 @@ def require_frontend_key(f):
     return decorated_function
 
 def forward_to_backend(endpoint, method='POST', json_data=None):
-    """Securely forwards requests to the private HF backend using the HF Token."""
+    """Securely forwards requests to the private HF backend."""
+    
+    # अगर URL सेट नहीं है, तो पहले ही रोक दो
+    if not BACKEND_URL or "your-private-space" in BACKEND_URL:
+        return jsonify({"success": False, "error": "BACKEND_URL is not configured in Vercel Env."}), 500
+
     headers = {
         "Authorization": f"Bearer {HF_TOKEN}",
         "Content-Type": "application/json"
@@ -37,11 +42,24 @@ def forward_to_backend(endpoint, method='POST', json_data=None):
     url = f"{BACKEND_URL.rstrip('/')}/{endpoint}"
     
     try:
+        # Vercel Hobby plan का टाइमआउट 10s होता है, इसलिए हम 9s रख रहे हैं
         if method == 'POST':
-            response = requests.post(url, headers=headers, json=json_data, timeout=10)
+            response = requests.post(url, headers=headers, json=json_data, timeout=9)
         else:
-            response = requests.get(url, headers=headers, timeout=10)
-        return jsonify(response.json()), response.status_code
+            response = requests.get(url, headers=headers, timeout=9)
+            
+        # 🔥 स्मार्ट चेकिंग: क्या रिस्पॉन्स सच में JSON है?
+        try:
+            res_json = response.json()
+            return jsonify(res_json), response.status_code
+        except Exception:
+            # अगर JSON नहीं है, मतलब HF Space सो रहा है या 401 दे रहा है
+            error_msg = f"Backend HF Space issue. Status: {response.status_code}. Make sure HF Space is Awake and HF_TOKEN is correct."
+            print(f"HTML Response Dump: {response.text[:200]}") # लॉग्स में देखने के लिए
+            return jsonify({"success": False, "error": error_msg}), 500
+            
+    except requests.exceptions.Timeout:
+        return jsonify({"success": False, "error": "Backend is sleeping or taking too long. Please open HF Space once to wake it up."}), 504
     except Exception as e:
         return jsonify({"success": False, "error": f"Frontend Proxy Error: {str(e)}"}), 500
 
