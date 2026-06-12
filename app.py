@@ -49,15 +49,15 @@ def forward_to_backend(endpoint, method='POST', json_data=None):
 # 🌐 UI Routing (Pages & PWA Files)
 # ==========================================
 @app.route('/')
+@app.route('/index.html')  # 🔥 बस यह एक लाइन जोड़ दो!
 def serve_index():
     return send_from_directory('templates', 'index.html')
 
-# 🔥 NEW: Route explicitly added for the Docs page
 @app.route('/docs')
 def serve_docs():
     return send_from_directory('templates', 'docs.html')
 
-# Handles PWA files like manifest.json, sw.js, or any custom icons in the static folder
+# Handles PWA files like manifest.json, sw.js etc.
 @app.route('/<path:filename>')
 def serve_static_files(filename):
     return send_from_directory('static', filename)
