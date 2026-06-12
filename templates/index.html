@@ -156,7 +156,8 @@
             <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
         </div>
         <div class="drawer-links">
-            <button class="drawer-link" onclick="goToDocs()"><i data-lucide="book-open"></i> API Docs</button>
+            <a href="/docs" class="drawer-link" onclick="history.replaceState(null, '')"><i data-lucide="book-open"></i> API Docs</a>
+            
             <button class="drawer-link" onclick="openApiModal()"><i data-lucide="key"></i> API Keys</button>
             <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
         </div>
@@ -298,14 +299,6 @@
             if(history.state?.view === 'drawer') history.back();
         }
 
-        // 🔥 FIX: Proper Docs Navigation without breaking history state
-        function goToDocs() {
-            closeDrawer();
-            setTimeout(() => {
-                window.location.href = '/docs';
-            }, 150);
-        }
-
         function openResults() {
             document.getElementById('resultsOverlay').style.display = 'flex';
             history.pushState({view: 'results'}, '');
@@ -407,7 +400,6 @@
             const container = document.getElementById('resultsArea');
             container.innerHTML = '';
             
-            // 🔥 FIX: Dynamic Aspect Ratio Checker
             const userOrientation = document.getElementById('orientation').value;
             const aspectStyle = userOrientation === 'portrait' ? 'aspect-ratio: 9/16;' : 'aspect-ratio: 16/9;';
             
