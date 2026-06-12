@@ -12,7 +12,6 @@
             --surface: #161b32;
             --primary: #4f46e5;
             --accent: #10b981;
-            --error: #ef4444;
             --text: #f8fafc;
             --text-dim: #94a3b8;
             --safe-area-top: env(safe-area-inset-top);
@@ -35,26 +34,8 @@
         }
         
         .header-left { display: flex; align-items: center; gap: 15px; }
-        .menu-btn { 
-            background: transparent; border: none; color: var(--text); cursor: pointer; padding: 8px;
-            display: flex; align-items: center; border-radius: 8px; transition: background 0.2s;
-        }
-        .menu-btn:hover { background: rgba(255,255,255,0.1); }
-        .menu-btn:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
-        
+        .menu-btn { background: transparent; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center; }
         .logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(45deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* Status indicator */
-        .status-indicator {
-            display: flex; align-items: center; gap: 8px;
-            padding: 6px 12px; background: rgba(16, 185, 129, 0.1); border-radius: 6px;
-            font-size: 0.85rem; color: var(--accent);
-        }
-        .status-dot {
-            width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
         /* Side Drawer (Hamburger Menu) */
         .drawer-overlay {
@@ -79,11 +60,10 @@
         
         .drawer-links { padding: 20px 0; display: flex; flex-direction: column; }
         .drawer-link {
-            padding: 15px 25px; display: flex; align-items: center; gap: 15px;
-            color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s;
+            padding: 15px 25px; display: flex; align-items: center; gap: 15px; background: transparent; border: none;
+            color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer; text-align: left; font-size: 1rem;
         }
-        .drawer-link:hover { background: rgba(255,255,255,0.05); color: var(--text); border-left: 3px solid var(--primary); padding-left: 22px; }
-        .drawer-link:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+        .drawer-link:hover { background: rgba(255,255,255,0.05); color: var(--text); border-left: 3px solid var(--primary); }
 
         /* Navigation Tabs */
         .nav-tabs {
@@ -95,7 +75,6 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         .tab-btn.active { background: var(--primary); color: white; }
-        .tab-btn:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 
         /* Search Section */
         .content-wrap { padding: 0 20px 100px; }
@@ -106,159 +85,127 @@
         
         input, textarea, select {
             width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 15px; color: white; font-size: 1rem; outline: none;
-            transition: border-color 0.2s;
+            border-radius: 12px; padding: 15px; color: white; font-size: 1rem; outline: none; transition: 0.3s;
         }
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--primary);
-            outline: none;
-        }
-        textarea { height: 120px; resize: vertical; }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        textarea { height: 120px; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-        .btn-main {
-            width: 100%; background: var(--primary); color: white; border: none; padding: 16px;
-            border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
-            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: opacity 0.2s;
+        .btn-main, .btn-outline {
+            width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px; border: none;
         }
-        .btn-main:hover:not(:disabled) { opacity: 0.9; }
-        .btn-main:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
-        .btn-main:disabled {
-            opacity: 0.6; cursor: not-allowed;
-        }
+        .btn-main { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); }
+        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .btn-outline:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
 
-        /* Alert Messages */
-        .alert {
-            padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: none;
+        /* API Key Modal */
+        .api-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+            background: var(--surface); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px;
+            z-index: 600; border: 1px solid rgba(255,255,255,0.1); opacity: 0; pointer-events: none;
+            transition: all 0.3s ease; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
-        .alert.error { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error); }
-        .alert.success { background: rgba(16, 185, 129, 0.1); color: var(--accent); border: 1px solid var(--accent); }
-        .alert.show { display: block; }
+        .api-modal.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+        .api-modal h3 { margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px; }
+        .api-modal p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
 
         /* Results Area */
         #resultsOverlay {
             position: fixed; inset: 0; background: var(--bg); z-index: 200;
             display: none; flex-direction: column;
         }
-        .overlay-header { 
-            padding: calc(15px + var(--safe-area-top)) 20px 15px; 
-            display: flex; align-items: center; gap: 15px; 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
-        }
+        .overlay-header { padding: calc(15px + var(--safe-area-top)) 20px 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .results-scroll { flex: 1; overflow-y: auto; padding: 20px; }
 
         /* Video Card */
         .video-card { background: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
         .video-thumb { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .badge { 
-            position: absolute; top: 10px; left: 10px; 
-            background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; 
-            font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2);
-        }
+        .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
         
         .card-info { padding: 15px; }
         .ai-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
         .tag-chip { color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
 
-        .card-buttons { display: flex; gap: 10px; margin-top: 12px; }
-        .card-btn {
-            flex: 1; padding: 10px; background: var(--primary); color: white;
-            border: none; border-radius: 8px; text-decoration: none; cursor: pointer;
-            text-align: center; font-weight: 600; transition: opacity 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        .card-btn:hover { opacity: 0.9; }
-
         /* Progress Modal */
         .loader-wrap {
-            position: fixed; inset: 0; background: rgba(11, 15, 25, 0.95); z-index: 300;
+            position: fixed; inset: 0; background: rgba(11, 15, 25, 0.9); z-index: 300;
             display: none; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; padding: 40px;
         }
-        .spinner { 
-            width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); 
-            border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; 
-        }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .scene-item {
-            margin-bottom: 30px;
-        }
-        .scene-text {
-            font-size: 0.9rem; color: var(--text-dim); margin-bottom: 10px;
-        }
-        .no-clip-message {
-            color: var(--error); font-size: 0.9rem;
-            padding: 12px; background: rgba(239, 68, 68, 0.1);
-            border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);
-        }
     </style>
 </head>
 <body>
 
     <header>
         <div class="header-left">
-            <button class="menu-btn" aria-label="Open menu" onclick="openDrawer()"><i data-lucide="menu"></i></button>
-            <div class="logo" aria-label="StockClip AI">STOCKCLIP AI</div>
+            <button class="menu-btn" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+            <div class="logo">STOCKCLIP AI</div>
         </div>
-        <div class="status-indicator" aria-label="Service status: operational">
-            <div class="status-dot"></div>
-            <span>Online</span>
-        </div>
+        <div id="statusDot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
     </header>
 
-    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()" aria-hidden="true"></div>
-    <div class="side-drawer" id="sideDrawer" role="navigation" aria-label="Settings menu">
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
         <div class="drawer-header">
             <h3>SETTINGS</h3>
-            <button class="menu-btn" aria-label="Close menu" onclick="closeDrawer()"><i data-lucide="x"></i></button>
+            <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
         </div>
         <div class="drawer-links">
             <a href="/docs" class="drawer-link"><i data-lucide="book-open"></i> API Docs</a>
-            <a href="#" class="drawer-link"><i data-lucide="key"></i> API Keys</a>
+            <button class="drawer-link" onclick="openApiModal()"><i data-lucide="key"></i> API Keys</button>
             <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
         </div>
     </div>
 
-    <div class="nav-tabs" role="tablist">
-        <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchMode('search')"><i data-lucide="search"></i> Clips</button>
-        <button class="tab-btn" role="tab" aria-selected="false" onclick="switchMode('timeline')"><i data-lucide="clapperboard"></i> Script</button>
+    <div class="drawer-overlay" id="apiModalOverlay" onclick="closeApiModal()" style="z-index: 550;"></div>
+    <div class="api-modal" id="apiModal">
+        <h3><i data-lucide="lock"></i> Security</h3>
+        <p>Enter your Frontend Secret API Key. It will be stored securely on this device's local storage.</p>
+        <div class="input-group">
+            <input type="password" id="userApiKeyInput" placeholder="Enter your Secret Key...">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn-outline" style="padding: 12px;" onclick="clearApiKey()"><i data-lucide="trash-2"></i> Clear</button>
+            <button class="btn-main" style="padding: 12px; box-shadow: none;" onclick="saveApiKey()"><i data-lucide="save"></i> Save Key</button>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchMode('search')"><i data-lucide="search"></i> Clips</button>
+        <button class="tab-btn" onclick="switchMode('timeline')"><i data-lucide="clapperboard"></i> Script</button>
     </div>
 
     <div class="content-wrap">
-        <div class="alert" id="alertBox"></div>
-        
         <div class="glass-card">
             <div id="searchView">
                 <div class="input-group">
-                    <label for="queryInput">What scene do you need?</label>
-                    <input type="text" id="queryInput" placeholder="e.g. Man hiking in mountains 4k" aria-describedby="query-hint">
-                    <small id="query-hint" style="font-size: 0.75rem; color: var(--text-dim);">Describe the scene or action you're looking for</small>
+                    <label>What scene do you need?</label>
+                    <input type="text" id="queryInput" placeholder="e.g. Man hiking in mountains 4k">
                 </div>
             </div>
 
             <div id="timelineView" style="display: none;">
                 <div class="input-group">
-                    <label for="scriptInput">Paste your full script</label>
-                    <textarea id="scriptInput" placeholder="The AI will analyze each sentence and find the perfect clips..." aria-describedby="script-hint"></textarea>
-                    <small id="script-hint" style="font-size: 0.75rem; color: var(--text-dim);">One scene per line or paragraph</small>
+                    <label>Paste your full script</label>
+                    <textarea id="scriptInput" placeholder="The AI will analyze each sentence and find the perfect clips..."></textarea>
                 </div>
             </div>
 
             <div class="grid-2">
                 <div class="input-group">
-                    <label for="orientation">Orientation</label>
+                    <label>Orientation</label>
                     <select id="orientation">
                         <option value="landscape">Landscape</option>
                         <option value="portrait">Portrait</option>
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="quality">Quality</label>
+                    <label>Quality</label>
                     <select id="quality">
                         <option value="1080">1080p+</option>
                         <option value="4k">4K Only</option>
@@ -267,96 +214,86 @@
                 </div>
             </div>
 
-            <button class="btn-main" id="submitBtn" onclick="startAI()" aria-busy="false"><i data-lucide="cpu"></i> RUN INTELLIGENCE</button>
+            <button class="btn-main" onclick="startAI()"><i data-lucide="cpu"></i> RUN INTELLIGENCE</button>
         </div>
     </div>
 
     <div id="resultsOverlay">
         <div class="overlay-header">
-            <button class="menu-btn" aria-label="Go back" onclick="closeResults()"><i data-lucide="chevron-left"></i></button>
+            <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
             <span style="font-weight: bold; font-size: 1.1rem;" id="resultTitle">Results</span>
         </div>
-        <div class="results-scroll" id="resultsArea" role="region" aria-label="Search results"></div>
+        <div class="results-scroll" id="resultsArea"></div>
     </div>
 
-    <div class="loader-wrap" id="loader" role="status" aria-live="polite" aria-label="Processing request">
+    <div class="loader-wrap" id="loader">
         <div class="spinner"></div>
         <p id="loaderText" style="margin-top: 20px; font-weight: 600; color: var(--accent);"></p>
     </div>
 
     <script>
-        // ==========================================
-        // Configuration & State Management
-        // ==========================================
+        lucide.createIcons();
         let currentMode = 'search';
-        let isLoading = false;
-        let activePollingTimer = null;
-        const POLLING_INTERVAL = 3000;
-        const MAX_RETRIES = 30; // 90 seconds max polling
-        
-        const STEPS = [
-            "Groq Brainstorming...",
-            "FAISS Mapping...",
-            "CLIP Vision Checking...",
-            "Finalizing HD Clips..."
-        ];
 
         // ==========================================
-        // Utility Functions
+        // 🔒 API KEY LOCAL STORAGE MANAGEMENT
         // ==========================================
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
+        const API_KEY_STORAGE_NAME = "SCFAI_FRONTEND_KEY";
+
+        function getUserApiKey() {
+            return localStorage.getItem(API_KEY_STORAGE_NAME) || "";
         }
 
-        function showAlert(message, type = 'error') {
-            const alertBox = document.getElementById('alertBox');
-            alertBox.textContent = message;
-            alertBox.className = `alert ${type} show`;
-            setTimeout(() => alertBox.classList.remove('show'), 5000);
+        // 🔥 THE FIX: Removed closeDrawer() call to prevent history.back() race condition
+        function openApiModal() {
+            // Manually hide the drawer classes without messing with the history
+            document.getElementById('sideDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            
+            // Set input value
+            document.getElementById('userApiKeyInput').value = getUserApiKey();
+            
+            // Show modal
+            document.getElementById('apiModalOverlay').classList.add('active');
+            document.getElementById('apiModal').classList.add('active');
+            
+            // Swap the history state from 'drawer' to 'apimodal'
+            history.replaceState({view: 'apimodal'}, '');
         }
 
-        function setLoading(loading) {
-            isLoading = loading;
-            document.getElementById('submitBtn').disabled = loading;
-            document.getElementById('submitBtn').setAttribute('aria-busy', loading);
+        function closeApiModal() {
+            document.getElementById('apiModalOverlay').classList.remove('active');
+            document.getElementById('apiModal').classList.remove('active');
+            if(history.state?.view === 'apimodal') history.back();
         }
 
-        function validateInput() {
-            const input = currentMode === 'search' 
-                ? document.getElementById('queryInput').value.trim()
-                : document.getElementById('scriptInput').value.trim();
-
-            if (!input) {
-                showAlert(`Please enter a ${currentMode === 'search' ? 'query' : 'script'}`, 'error');
-                return false;
+        function saveApiKey() {
+            const key = document.getElementById('userApiKeyInput').value.trim();
+            if(key) {
+                localStorage.setItem(API_KEY_STORAGE_NAME, key);
+                alert("Key saved securely to your device!");
+                closeApiModal();
+            } else {
+                alert("Please enter a valid key!");
             }
-            return true;
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE_NAME);
+            document.getElementById('userApiKeyInput').value = "";
+            alert("Key deleted from this device!");
         }
 
         // ==========================================
-        // UI State Management
+        // UI & VIEW MANAGEMENT
         // ==========================================
         function switchMode(m) {
             currentMode = m;
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                const isActive = b.innerText.toLowerCase().includes(m);
-                b.classList.toggle('active', isActive);
-                b.setAttribute('aria-selected', isActive);
-            });
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(m)));
             document.getElementById('searchView').style.display = m === 'search' ? 'block' : 'none';
             document.getElementById('timelineView').style.display = m === 'timeline' ? 'block' : 'none';
         }
 
-        // ==========================================
-        // History API (Back Button Management)
-        // ==========================================
         function openDrawer() {
             document.getElementById('sideDrawer').classList.add('active');
             document.getElementById('drawerOverlay').classList.add('active');
@@ -379,9 +316,12 @@
             if(history.state?.view === 'results') history.back();
         }
 
+        // Native back button handler for everything
         window.onpopstate = (e) => {
             document.getElementById('sideDrawer').classList.remove('active');
             document.getElementById('drawerOverlay').classList.remove('active');
+            document.getElementById('apiModal').classList.remove('active');
+            document.getElementById('apiModalOverlay').classList.remove('active');
             
             if (!e.state || e.state.view !== 'results') {
                 document.getElementById('resultsOverlay').style.display = 'none';
@@ -389,266 +329,125 @@
         };
 
         // ==========================================
-        // API Communication
+        // AI TASK POLLING LOGIC
         // ==========================================
+        const steps = ["Groq Brainstorming...", "FAISS Mapping...", "CLIP Vision Checking...", "Finalizing HD Clips..."];
+        
         async function startAI() {
-            if (!validateInput()) return;
-            if (isLoading) return;
+            const userKey = getUserApiKey();
+            if(!userKey) {
+                alert("Please set your API Key in Settings first!");
+                // Give user a chance to open modal manually via menu
+                return;
+            }
 
-            setLoading(true);
-            
             const loader = document.getElementById('loader');
             const loaderText = document.getElementById('loaderText');
             loader.style.display = 'flex';
             
-            let stepIndex = 0;
-            const stepTimer = setInterval(() => {
-                loaderText.innerText = STEPS[stepIndex % STEPS.length];
-                stepIndex++;
+            let sIdx = 0;
+            const timer = setInterval(() => {
+                loaderText.innerText = steps[sIdx % steps.length];
+                sIdx++;
             }, 2000);
 
             const payload = currentMode === 'search' 
-                ? {
-                    query: document.getElementById('queryInput').value,
-                    orientation: document.getElementById('orientation').value,
-                    quality: document.getElementById('quality').value
-                }
-                : {
-                    script: document.getElementById('scriptInput').value,
-                    orientation: document.getElementById('orientation').value,
-                    quality: document.getElementById('quality').value
-                };
+                ? { query: document.getElementById('queryInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value }
+                : { script: document.getElementById('scriptInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value };
 
             const endpoint = currentMode === 'search' ? '/api/search' : '/api/timeline';
 
             try {
                 const res = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include', // Use session/cookies for auth
+                    headers: { 'Content-Type': 'application/json', 'X-API-Key': userKey },
                     body: JSON.stringify(payload)
                 });
-
-                if (!res.ok) {
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }
-
                 const data = await res.json();
                 
-                if (data.success && data.task_id) {
-                    pollStatus(data.task_id, stepTimer);
-                } else {
-                    clearInterval(stepTimer);
-                    setLoading(false);
+                if (data.success) pollStatus(data.task_id, timer, userKey);
+                else {
+                    clearInterval(timer);
                     loader.style.display = 'none';
-                    showAlert(data.error || 'An error occurred', 'error');
+                    if (res.status === 401) alert("Unauthorized: Invalid API Key!");
+                    else alert(data.error);
                 }
             } catch (err) {
-                clearInterval(stepTimer);
-                setLoading(false);
+                clearInterval(timer);
                 loader.style.display = 'none';
-                showAlert('Connection failed. Ensure the backend is running.', 'error');
-                console.error('API Error:', err);
+                alert("Connection Failed. Make sure the backend is awake.");
             }
         }
 
-        async function pollStatus(taskId, stepTimer) {
-            let retryCount = 0;
-            
+        async function pollStatus(tid, timer, userKey) {
             const poll = setInterval(async () => {
-                retryCount++;
-                
-                if (retryCount > MAX_RETRIES) {
-                    clearInterval(poll);
-                    clearInterval(stepTimer);
-                    setLoading(false);
-                    document.getElementById('loader').style.display = 'none';
-                    showAlert('Request timed out. Please try again.', 'error');
-                    return;
-                }
-
                 try {
-                    const res = await fetch(`/api/status/${taskId}`, {
-                        credentials: 'include'
+                    const res = await fetch(`/api/status/${tid}`, {
+                        headers: { 'X-API-Key': userKey }
                     });
-
-                    if (!res.ok) {
-                        throw new Error(`HTTP ${res.status}`);
-                    }
-
                     const data = await res.json();
-                    const task = data.task || data;
-
-                    if (task.status === 'completed') {
+                    
+                    if (data.task.status === 'completed') {
                         clearInterval(poll);
-                        clearInterval(stepTimer);
-                        setLoading(false);
+                        clearInterval(timer);
                         document.getElementById('loader').style.display = 'none';
-                        
-                        if (task.data) {
-                            renderResults(task.data);
-                        } else {
-                            showAlert('No results returned', 'error');
-                        }
-                    } else if (task.status === 'error') {
+                        renderResults(data.task.data);
+                    } else if (data.task.status === 'error') {
                         clearInterval(poll);
-                        clearInterval(stepTimer);
-                        setLoading(false);
+                        clearInterval(timer);
                         document.getElementById('loader').style.display = 'none';
-                        showAlert(task.error || 'Processing failed', 'error');
+                        alert(data.task.error);
                     }
                 } catch(err) {
-                    console.log("Polling attempt", retryCount, "...");
+                    console.log("Polling...");
                 }
-            }, POLLING_INTERVAL);
-
-            activePollingTimer = poll;
-        }
-
-        // ==========================================
-        // Results Rendering
-        // ==========================================
-        function createVideoCard(clip) {
-            const card = document.createElement('div');
-            card.className = 'video-card';
-
-            const thumb = document.createElement('div');
-            thumb.className = 'video-thumb';
-
-            const video = document.createElement('video');
-            video.src = clip.download_url;
-            video.poster = clip.thumbnail;
-            video.muted = true;
-            video.loop = true;
-            video.playsinline = true;
-            video.setAttribute('aria-label', `Video clip: ${escapeHtml(clip.query_used || 'Search result')}`);
-            
-            video.addEventListener('mouseover', () => video.play());
-            video.addEventListener('mouseout', () => video.pause());
-
-            const badge = document.createElement('span');
-            badge.className = 'badge';
-            badge.textContent = clip.quality_label;
-
-            thumb.appendChild(video);
-            thumb.appendChild(badge);
-
-            const info = document.createElement('div');
-            info.className = 'card-info';
-
-            const meta = document.createElement('div');
-            meta.className = 'ai-meta';
-
-            const scoreChip = document.createElement('span');
-            scoreChip.innerHTML = `<span class="tag-chip">CLIP Vision: ${clip.visual_score || 'N/A'}%</span>`;
-
-            const querySpan = document.createElement('span');
-            querySpan.textContent = `🔍 ${escapeHtml(clip.query_used || 'Unknown')}`;
-
-            meta.appendChild(scoreChip);
-            meta.appendChild(querySpan);
-
-            const buttons = document.createElement('div');
-            buttons.className = 'card-buttons';
-
-            const downloadBtn = document.createElement('a');
-            downloadBtn.href = clip.download_url;
-            downloadBtn.className = 'card-btn';
-            downloadBtn.textContent = 'Download';
-            downloadBtn.setAttribute('download', '');
-            downloadBtn.setAttribute('aria-label', `Download ${escapeHtml(clip.query_used)} clip`);
-
-            const sourceBtn = document.createElement('a');
-            sourceBtn.href = clip.source_url || '#';
-            sourceBtn.className = 'card-btn';
-            sourceBtn.textContent = 'Source';
-            sourceBtn.target = '_blank';
-            sourceBtn.rel = 'noopener noreferrer';
-            sourceBtn.setAttribute('aria-label', 'Visit source website');
-
-            buttons.appendChild(downloadBtn);
-            buttons.appendChild(sourceBtn);
-
-            info.appendChild(meta);
-            info.appendChild(buttons);
-
-            card.appendChild(thumb);
-            card.appendChild(info);
-
-            return card;
+            }, 3000);
         }
 
         function renderResults(data) {
             const container = document.getElementById('resultsArea');
             container.innerHTML = '';
-
-            if (!data || data.length === 0) {
-                const noResults = document.createElement('p');
-                noResults.style.textAlign = 'center';
-                noResults.style.color = 'var(--text-dim)';
-                noResults.textContent = 'No results found. Try different search terms.';
-                container.appendChild(noResults);
-                openResults();
-                return;
-            }
-
+            
             if (currentMode === 'search') {
                 data.forEach(clip => {
-                    if (clip && clip.download_url) {
-                        container.appendChild(createVideoCard(clip));
-                    }
+                    container.innerHTML += `
+                        <div class="video-card">
+                            <div class="video-thumb">
+                                <video src="${clip.download_url}" poster="${clip.thumbnail}" muted loop onmouseover="this.play()" onmouseout="this.pause()" playsinline></video>
+                                <span class="badge">${clip.quality_label}</span>
+                            </div>
+                            <div class="card-info">
+                                <div class="ai-meta">
+                                    <span><span class="tag-chip">CLIP Vision: ${clip.visual_score}%</span></span>
+                                    <span>🔍 ${clip.query_used}</span>
+                                </div>
+                                <div style="display:flex; gap:10px; margin-top:12px;">
+                                    <a href="${clip.download_url}" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 });
             } else {
-                // Timeline/Script mode
                 data.forEach((item, idx) => {
-                    const sceneDiv = document.createElement('div');
-                    sceneDiv.className = 'scene-item';
-
-                    const sceneText = document.createElement('p');
-                    sceneText.className = 'scene-text';
-                    sceneText.textContent = `Scene ${idx + 1}: "${escapeHtml(item.scene_text || '')}`;
-
-                    sceneDiv.appendChild(sceneText);
-
-                    if (item.clip && item.clip.download_url) {
-                        sceneDiv.appendChild(createVideoCard(item.clip));
-                    } else {
-                        const noClip = document.createElement('p');
-                        noClip.className = 'no-clip-message';
-                        noClip.textContent = 'No high-quality clip found for this scene.';
-                        sceneDiv.appendChild(noClip);
-                    }
-
-                    container.appendChild(sceneDiv);
+                    container.innerHTML += `
+                        <div style="margin-bottom:30px;">
+                            <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:10px;">Scene ${idx+1}: "${item.scene_text}"</p>
+                            ${item.clip ? `
+                                <div class="video-card">
+                                    <div class="video-thumb"><video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" playsinline></video></div>
+                                </div>
+                            ` : '<p style="color:red; font-size:0.9rem;">No high quality clip found for this scene.</p>'}
+                        </div>
+                    `;
                 });
             }
-
             openResults();
         }
 
-        // ==========================================
-        // Initialization
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-
-            // PWA Service Worker Registration
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js').catch(err => {
-                    console.warn('Service Worker registration failed:', err);
-                });
-            }
-
-            // Add enter key support for search
-            document.getElementById('queryInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') startAI();
-            });
-        });
-
-        // Cleanup polling on page unload
-        window.addEventListener('beforeunload', () => {
-            if (activePollingTimer) clearInterval(activePollingTimer);
-        });
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW Register Failed", err));
+        }
     </script>
 </body>
 </html>
