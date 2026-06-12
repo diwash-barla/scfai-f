@@ -156,8 +156,7 @@
             <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
         </div>
         <div class="drawer-links">
-            <a href="/docs" class="drawer-link" onclick="history.replaceState(null, '')"><i data-lucide="book-open"></i> API Docs</a>
-            
+            <button class="drawer-link" onclick="goToDocs()"><i data-lucide="book-open"></i> API Docs</button>
             <button class="drawer-link" onclick="openApiModal()"><i data-lucide="key"></i> API Keys</button>
             <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
         </div>
@@ -297,6 +296,21 @@
             document.getElementById('sideDrawer').classList.remove('active');
             document.getElementById('drawerOverlay').classList.remove('active');
             if(history.state?.view === 'drawer') history.back();
+        }
+
+        // 🔥 THE ULTIMATE FIX: Clean routing without triggering history conflicts
+        function goToDocs() {
+            // 1. Visually close drawer instantly
+            document.getElementById('sideDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            
+            // 2. Safely remove 'drawer' from history stack so back button from /docs works normally
+            if (history.state && history.state.view === 'drawer') {
+                history.replaceState(null, '');
+            }
+            
+            // 3. Navigate
+            window.location.href = '/docs';
         }
 
         function openResults() {
