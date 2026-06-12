@@ -215,81 +215,109 @@
         </div>
     </div>
 
-    <div id="docsPage">
-        <div class="docs-header">
-            <button class="menu-btn" onclick="closeDocs()"><i data-lucide="chevron-left"></i></button>
-            <span style="font-weight: bold; font-size: 1.1rem;">Documentation</span>
-        </div>
-        <div class="docs-content">
-
-            <div class="docs-section">
-                <h2><i data-lucide="zap" style="width:18px;height:18px;"></i> StockClip AI क्या है?</h2>
-                <p>StockClip AI एक intelligent stock footage finder है जो AI का उपयोग करके आपके script या query के लिए perfect HD/4K video clips ढूंढता है।</p>
-                <span class="docs-badge">Groq LLM</span>
-                <span class="docs-badge">FAISS Search</span>
-                <span class="docs-badge">CLIP Vision</span>
-            </div>
-
-            <div class="docs-section">
-                <h2><i data-lucide="play-circle" style="width:18px;height:18px;"></i> कैसे शुरू करें?</h2>
-
-                <div class="docs-step">
-                    <div class="step-num">1</div>
-                    <div class="step-info">
-                        <h4>API Key सेट करें</h4>
-                        <p>Menu → API Settings में जाकर अपनी Frontend Secret Key डालें और Save करें। यह key locally आपके browser में safe रहती है।</p>
-                    </div>
-                </div>
-
-                <div class="docs-step">
-                    <div class="step-num">2</div>
-                    <div class="step-info">
-                        <h4>Clips Mode — Single Query</h4>
-                        <p>"Clips" tab में जाएं, अपना scene describe करें जैसे "Man hiking in mountains 4K" और RUN INTELLIGENCE दबाएं।</p>
-                    </div>
-                </div>
-
-                <div class="docs-step">
-                    <div class="step-num">3</div>
-                    <div class="step-info">
-                        <h4>Script Mode — Full Timeline</h4>
-                        <p>"Script" tab में पूरा script paste करें। AI हर sentence के लिए automatically best matching clip ढूंढेगा।</p>
-                    </div>
-                </div>
-
-                <div class="docs-step">
-                    <div class="step-num">4</div>
-                    <div class="step-info">
-                        <h4>Download करें</h4>
-                        <p>Results में आए clips को preview करें और Download button से HD clip save करें।</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="docs-section">
-                <h2><i data-lucide="settings" style="width:18px;height:18px;"></i> Settings Guide</h2>
-                <div class="docs-step">
-                    <div class="step-num" style="background: var(--accent);">?</div>
-                    <div class="step-info">
-                        <h4>Orientation</h4>
-                        <p><strong>Landscape</strong> — YouTube, film के लिए 16:9<br><strong>Portrait</strong> — Reels, Shorts के लिए 9:16</p>
-                    </div>
-                </div>
-                <div class="docs-step">
-                    <div class="step-num" style="background: var(--accent);">?</div>
-                    <div class="step-info">
-                        <h4>Quality</h4>
-                        <p><strong>1080p+</strong> — fast results, good quality<br><strong>4K Only</strong> — best quality, थोड़ा slow<br><strong>Any</strong> — सबसे fast</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="docs-section">
-                <h2><i data-lucide="shield" style="width:18px;height:18px;"></i> Security</h2>
-                <p>आपकी API Key सिर्फ आपके browser के localStorage में रहती है। कोई server पर नहीं जाती। हर request में header के through safely pass होती है।</p>
-            </div>
-
-        </div>
+<div id="docsPage">  
+        <div class="docs-header">  
+            <button class="menu-btn" onclick="closeDocs()"><i data-lucide="chevron-left"></i></button>  
+            <span style="font-weight: bold; font-size: 1.1rem;">API Specification</span>  
+        </div>  
+        <div class="docs-content">  
+  
+            <div class="docs-section">  
+                <h2><i data-lucide="server" style="width:18px;height:18px;"></i> StockClip AI Engine</h2>  
+                <p>Welcome to the StockClip AI Video Retrieval Platform. This API leverages an Asynchronous Pipeline integrating Groq LLM expansion, FAISS semantic ranking, and CLIP Vision verification.</p>  
+                <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--accent); padding: 10px 15px; border-radius: 4px; margin-top: 15px;">  
+                    <span style="color: var(--accent); font-weight: bold; font-size: 0.85rem;">PRODUCTION BASE URL</span><br>  
+                    <code style="color: #fff; font-size: 0.9rem;" class="dynamic-base-url">https://api.stockclip.ai</code>  
+                </div>  
+            </div>  
+  
+            <div class="docs-section">  
+                <h2><i data-lucide="shield-alert" style="width:18px;height:18px;"></i> Security & Rate Limits</h2>  
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">  
+                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
+                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Auth Scope</span><br>  
+                        <span style="font-size: 0.9rem; font-weight: bold; color: #818cf8;">Frontend/Client Only</span>  
+                    </div>  
+                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
+                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Timeout / Expiry</span><br>  
+                        <span style="font-size: 0.9rem; font-weight: bold; color: #facc15;">Task TTL: 180s</span>  
+                    </div>  
+                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
+                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Max Concurrency</span><br>  
+                        <span style="font-size: 0.9rem; font-weight: bold; color: #f472b6;">5 Requests / sec</span>  
+                    </div>  
+                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
+                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Polling Limit</span><br>  
+                        <span style="font-size: 0.9rem; font-weight: bold; color: #34d399;">Min Interval: 3s</span>  
+                    </div>  
+                </div>  
+                <p style="font-size: 0.85rem; color: var(--text-dim);"><strong>Header Requirement:</strong> Pass your per-user key via <code>X-API-Key</code>. Exceeding limits will return a <code>429 Too Many Requests</code>.</p>  
+            </div>  
+  
+            <div class="docs-section">  
+                <h2><i data-lucide="git-merge" style="width:18px;height:18px;"></i> Task Lifecycle Pipeline</h2>  
+                <p>AI processing follows a strict state machine. Monitor the <code>status</code> field during polling.</p>  
+                <div style="background: var(--surface); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); font-family: monospace; font-size: 0.8rem; line-height: 2;">  
+                    <span style="color: #94a3b8;">[1]</span> <strong style="color: #60a5fa;">queued</strong> <span style="color: var(--text-dim);">→ Task accepted, awaiting worker.</span><br>  
+                    <span style="color: #94a3b8;">[2]</span> <strong style="color: #c084fc;">processing</strong> <span style="color: var(--text-dim);">→ Groq generating search queries.</span><br>  
+                    <span style="color: #94a3b8;">[3]</span> <strong style="color: #facc15;">fetching</strong> <span style="color: var(--text-dim);">→ Gathering stock clips from providers.</span><br>  
+                    <span style="color: #94a3b8;">[4]</span> <strong style="color: #fb923c;">ranking</strong> <span style="color: var(--text-dim);">→ FAISS semantic matching running.</span><br>  
+                    <span style="color: #94a3b8;">[5]</span> <strong style="color: #34d399;">vision</strong> <span style="color: var(--text-dim);">→ CLIP model verifying frame accuracy.</span><br>  
+                    <span style="color: #94a3b8;">[6]</span> <strong style="color: var(--accent);">completed</strong> <span style="color: var(--text-dim);">→ Task done. Data payload attached.</span>  
+                </div>  
+            </div>  
+  
+            <div class="docs-section">  
+                <h2><i data-lucide="code" style="width:18px;height:18px;"></i> Endpoints & Integration</h2>  
+                  
+                <h4 style="margin: 15px 0 5px; color: var(--text);">1. Init Job</h4>  
+                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">POST /api/search</code>  
+                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>// Request Payload  
+{  
+  "query": "Cyberpunk city glowing neon rain",  
+  "orientation": "landscape", // "landscape" | "portrait"  
+  "quality": "4k" // "1080" | "4k" | "any"  
+}  
+  
+// Response (202 Accepted)  
+{ "success": true, "task_id": "550e8400..." }</code></pre>  
+  
+                <h4 style="margin: 25px 0 5px; color: var(--text);">2. Poll Results & Data Contract</h4>  
+                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">GET /api/status/{task_id}</code>  
+                <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 10px;"><strong>Note on Partial Results:</strong> Currently, the API does not stream partial data. Wait for the <code>completed</code> status.</p>  
+                  
+                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #f8fafc; font-size: 0.8rem;"><code>// Response Schema (200 OK)  
+{  
+  "success": true,  
+  "task": {  
+    "status": "completed",  
+    "count": 5, // Max 5 clips returned per search  
+    "data": [  
+      {  
+        "clip_id": "px-123456",  
+        "download_url": "https://...",  
+        "quality_label": "4K",  
+        "aspect_ratio": "16:9",  
+        "visual_score": 92.5, // Range: 0.0 to 100.0 (CLIP Confidence)  
+        "query_used": "neon city rain",  
+        "description": "Aerial view of a futuristic city.",  
+        "tags": ["cyberpunk", "neon", "cityscape"]  
+      }  
+    ]  
+  }  
+}</code></pre>  
+            </div>  
+  
+            <div class="docs-section">  
+                <h2><i data-lucide="alert-triangle" style="width:18px;height:18px;"></i> Error & Retry Policy</h2>  
+                <ul style="color: var(--text-dim); font-size: 0.85rem; line-height: 1.8; margin-top: 10px;">  
+                    <li><strong style="color: #ef4444;">401 Unauthorized:</strong> Token missing/invalid. Do not retry.</li>  
+                    <li><strong style="color: #facc15;">404 Not Found:</strong> <code>task_id</code> expired (exceeded 180s TTL) or invalid.</li>  
+                    <li><strong style="color: #f87171;">504 Gateway Timeout:</strong> AI Backend cold boot. <span style="color: white; border-bottom: 1px dashed white;">Retry automatically 1 time</span> after a 5-second delay.</li>  
+                </ul>  
+            </div>  
+  
+        </div>  
     </div>
 
     <div class="nav-tabs">
