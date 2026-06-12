@@ -1,105 +1,106 @@
 import os
 import requests
-from functools import wraps
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+from fastapi import FastAPI, Request, HTTPException, Security, Depends
+from fastapi.security.api_key import APIKeyHeader
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
-# Initialize Frontend Flask App
-app = Flask(__name__, static_folder='static', template_folder='templates')
-CORS(app)
+app = FastAPI(docs_url=None, redoc_url=None)
 
 # ==========================================
-# 🔒 ENVIRONMENT SECRETS (Vercel ENV)
+# 📂 Directory & Static Setup
 # ==========================================
-BACKEND_URL = os.environ.get("BACKEND_URL", "https://your-private-space-name.hf.space")
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
-FRONTEND_API_KEY = os.environ.get("FRONTEND_API_KEY", "my-super-secret-key")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
-def require_frontend_key(f):
-    """
-    🛡️ Security Bouncer: Checks if the request contains the valid API Key.
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        provided_key = request.headers.get("X-API-Key")
-        if not provided_key or provided_key != FRONTEND_API_KEY:
-            print("🚫 Blocked Unauthorized Access Attempt!")
-            return jsonify({"success": False, "error": "Unauthorized Access. Invalid API Key."}), 401
-        return f(*args, **kwargs)
-    return decorated_function
+# ==========================================
+# 🔒 Environment Secrets
+# ==========================================
+FRONTEND_API_KEY = os.getenv("FRONTEND_API_KEY", "my-super-secret-key")
+BACKEND_URL = os.getenv("BACKEND_URL", "https://your-private-space-name.hf.space").rstrip("/")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-def forward_to_backend(endpoint, method='POST', json_data=None):
-    """Securely forwards requests to the private HF backend."""
-    
-    # अगर URL सेट नहीं है, तो पहले ही रोक दो
+api_key_header = APIKeyHeader(name="x-api-key", auto_error=True)
+
+async def get_api_key(api_key: str = Security(api_key_header)):
+    if api_key != FRONTEND_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key. Access Denied!")
+    return api_key
+
+# ==========================================
+# 🌐 UI Routing
+# ==========================================
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    return templates.TemplateResponse(request=request, name="index.html")
+
+@app.get("/docs", response_class=HTMLResponse)
+async def read_docs(request: Request):
+    return templates.TemplateResponse(request=request, name="docs.html")
+
+# ==========================================
+# 📱 PWA & Static Routes (No Vercel.json needed!)
+# ==========================================
+@app.get("/manifest.json")
+async def serve_manifest():
+    return FileResponse(os.path.join(BASE_DIR, "static/manifest.json"), media_type="application/manifest+json")
+
+@app.get("/sw.js")
+async def serve_sw():
+    return FileResponse(os.path.join(BASE_DIR, "static/sw.js"), media_type="application/javascript")
+
+# ==========================================
+# 🔄 API Proxy Routes
+# ==========================================
+class SearchRequest(BaseModel):
+    query: str
+    orientation: str = "landscape"
+    quality: str = "any"
+
+class TimelineRequest(BaseModel):
+    script: str
+    orientation: str = "landscape"
+    quality: str = "any"
+
+@app.post("/api/search")
+async def proxy_search(request_data: SearchRequest, api_key: str = Depends(get_api_key)):
     if not BACKEND_URL or "your-private-space" in BACKEND_URL:
-        return jsonify({"success": False, "error": "BACKEND_URL is not configured in Vercel Env."}), 500
-
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    url = f"{BACKEND_URL.rstrip('/')}/{endpoint}"
+        raise HTTPException(status_code=500, detail="BACKEND_URL is not configured properly.")
+        
+    headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"} if HF_TOKEN else {"Content-Type": "application/json"}
     
     try:
-        # Vercel Hobby plan का टाइमआउट 10s होता है, इसलिए हम 9s रख रहे हैं
-        if method == 'POST':
-            response = requests.post(url, headers=headers, json=json_data, timeout=9)
-        else:
-            response = requests.get(url, headers=headers, timeout=9)
-            
-        # 🔥 स्मार्ट चेकिंग: क्या रिस्पॉन्स सच में JSON है?
-        try:
-            res_json = response.json()
-            return jsonify(res_json), response.status_code
-        except Exception:
-            # अगर JSON नहीं है, मतलब HF Space सो रहा है या 401 दे रहा है
-            error_msg = f"Backend HF Space issue. Status: {response.status_code}. Make sure HF Space is Awake and HF_TOKEN is correct."
-            print(f"HTML Response Dump: {response.text[:200]}") # लॉग्स में देखने के लिए
-            return jsonify({"success": False, "error": error_msg}), 500
-            
+        res = requests.post(f"{BACKEND_URL}/api/search", json=request_data.dict(), headers=headers, timeout=10)
+        if res.status_code == 202 or res.status_code == 200:
+            return res.json()
+        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
     except requests.exceptions.Timeout:
-        return jsonify({"success": False, "error": "Backend is sleeping or taking too long. Please open HF Space once to wake it up."}), 504
+        raise HTTPException(status_code=504, detail="Backend is sleeping. Please wake it up.")
     except Exception as e:
-        return jsonify({"success": False, "error": f"Frontend Proxy Error: {str(e)}"}), 500
+        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
 
-# ==========================================
-# 🌐 UI Routing (Pages & PWA Files)
-# ==========================================
-@app.route('/')
-@app.route('/index.html')  # 🔥 बस यह एक लाइन जोड़ दो!
-def serve_index():
-    return send_from_directory('templates', 'index.html')
+@app.post("/api/timeline")
+async def proxy_timeline(request_data: TimelineRequest, api_key: str = Depends(get_api_key)):
+    headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"} if HF_TOKEN else {"Content-Type": "application/json"}
+    try:
+        res = requests.post(f"{BACKEND_URL}/api/timeline", json=request_data.dict(), headers=headers, timeout=10)
+        if res.status_code == 202 or res.status_code == 200:
+            return res.json()
+        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
 
-@app.route('/docs')
-def serve_docs():
-    return send_from_directory('templates', 'docs.html')
+@app.get("/api/status/{task_id}")
+async def proxy_status(task_id: str, api_key: str = Depends(get_api_key)):
+    headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+    try:
+        res = requests.get(f"{BACKEND_URL}/api/status/{task_id}", headers=headers, timeout=10)
+        if res.status_code == 200:
+            return res.json()
+        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
 
-# Handles PWA files like manifest.json, sw.js etc.
-@app.route('/<path:filename>')
-def serve_static_files(filename):
-    return send_from_directory('static', filename)
-
-# ==========================================
-# 🔄 API Proxy Routes (Secured with FRONTEND_API_KEY)
-# ==========================================
-@app.route('/api/search', methods=['POST'])
-@require_frontend_key
-def proxy_search():
-    return forward_to_backend('api/search', method='POST', json_data=request.get_json())
-
-@app.route('/api/timeline', methods=['POST'])
-@require_frontend_key
-def proxy_timeline():
-    return forward_to_backend('api/timeline', method='POST', json_data=request.get_json())
-
-@app.route('/api/status/<task_id>', methods=['GET'])
-@require_frontend_key
-def proxy_status(task_id):
-    return forward_to_backend(f'api/status/{task_id}', method='GET')
-
-if __name__ == '__main__':
-    print("Starting Secured Public Frontend Proxy Server...")
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
-    
