@@ -37,20 +37,20 @@
         .menu-btn { background: transparent; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center; }
         .logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(45deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* Side Drawer (Hamburger Menu) */
+        /* 🔥 CLEAN SIDEBAR (Meta Studio Style) */
         .drawer-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 400;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px);
         }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
         
         .side-drawer {
             position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
-            background: var(--surface); z-index: 500; transition: left 0.3s ease;
+            background: var(--surface); z-index: 500; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border-right: 1px solid rgba(255,255,255,0.05); box-shadow: 5px 0 20px rgba(0,0,0,0.6);
             display: flex; flex-direction: column;
         }
-        .side-drawer.active { left: 0; }
+        .side-drawer.active { transform: translateX(280px); }
         
         .drawer-header {
             padding: calc(20px + var(--safe-area-top)) 20px 20px; display: flex; justify-content: space-between; align-items: center;
@@ -58,12 +58,30 @@
         }
         .drawer-header h3 { margin: 0; font-size: 1.1rem; color: var(--text); letter-spacing: 1px; }
         
-        .drawer-links { padding: 20px 0; display: flex; flex-direction: column; }
+        .drawer-links { padding: 15px; display: flex; flex-direction: column; gap: 5px; }
         .drawer-link {
-            padding: 15px 25px; display: flex; align-items: center; gap: 15px; background: transparent; border: none;
-            color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer; text-align: left; font-size: 1rem;
+            padding: 12px 15px; display: flex; align-items: center; gap: 15px; background: transparent; border: none;
+            color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer; text-align: left; font-size: 1rem; border-radius: 10px;
         }
-        .drawer-link:hover { background: rgba(255,255,255,0.05); color: var(--text); border-left: 3px solid var(--primary); }
+        .drawer-link:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+        /* 🔥 CLEAN MODAL (Meta Studio Style) */
+        .api-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 600;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .api-modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .api-modal {
+            background: var(--surface); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            transform: scale(0.95); transition: transform 0.3s ease;
+        }
+        .api-modal-overlay.active .api-modal { transform: scale(1); }
+        
+        .api-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .api-modal-header h3 { margin: 0; display: flex; align-items: center; gap: 10px; }
 
         /* Navigation Tabs */
         .nav-tabs {
@@ -96,20 +114,15 @@
             width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 10px; border: none;
         }
-        .btn-main { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); }
+        .btn-main { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); transition: 0.2s; }
+        .btn-main:active { transform: scale(0.98); }
         .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
-        .btn-outline:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
 
-        /* API Key Modal */
-        .api-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
-            background: var(--surface); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px;
-            z-index: 600; border: 1px solid rgba(255,255,255,0.1); opacity: 0; pointer-events: none;
-            transition: all 0.3s ease; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-        }
-        .api-modal.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
-        .api-modal h3 { margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px; }
-        .api-modal p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
+        /* Status Text (Meta Studio Style) */
+        .status-msg { font-size: 0.8rem; margin-top: 10px; display: none; }
+        .status-msg.success { color: var(--accent); display: block; }
+        .status-msg.error { color: #ef4444; display: block; }
+        .status-msg.warn { color: #facc15; display: block; }
 
         /* Results Area */
         #resultsOverlay {
@@ -120,20 +133,19 @@
         .results-scroll { flex: 1; overflow-y: auto; padding: 20px; }
 
         /* Video Card */
-        .video-card { background: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+        .video-card { background: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .video-thumb { position: relative; width: 100%; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
+        .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
         
         .card-info { padding: 15px; }
         .ai-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
         .tag-chip { color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
 
-        /* Progress Modal */
+        /* Progress Loader */
         .loader-wrap {
-            position: fixed; inset: 0; background: rgba(11, 15, 25, 0.9); z-index: 300;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 40px;
+            position: fixed; inset: 0; background: rgba(11, 15, 25, 0.9); z-index: 800;
+            display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px;
         }
         .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -143,36 +155,41 @@
 
     <header>
         <div class="header-left">
-            <button class="menu-btn" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+            <button class="menu-btn" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
             <div class="logo">STOCKCLIP AI</div>
         </div>
         <div id="statusDot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
     </header>
 
-    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleSidebar()"></div>
     <div class="side-drawer" id="sideDrawer">
         <div class="drawer-header">
-            <h3>SETTINGS</h3>
-            <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
+            <h3>MENU</h3>
+            <button class="menu-btn" onclick="toggleSidebar()"><i data-lucide="x"></i></button>
         </div>
         <div class="drawer-links">
-            <a href="/docs" class="drawer-link"><i data-lucide="book-open"></i> API Docs</a>
-            
-            <button class="drawer-link" onclick="openApiModal()"><i data-lucide="key"></i> API Keys</button>
-            <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
+            <button class="drawer-link" onclick="toggleApiModal()"><i data-lucide="key"></i> API Settings</button>
+            <a href="/docs" class="drawer-link"><i data-lucide="book-open"></i> Documentation</a>
         </div>
     </div>
 
-    <div class="drawer-overlay" id="apiModalOverlay" onclick="closeApiModal()" style="z-index: 550;"></div>
-    <div class="api-modal" id="apiModal">
-        <h3><i data-lucide="lock"></i> Security</h3>
-        <p>Enter your Frontend Secret API Key. It will be stored securely on this device's local storage.</p>
-        <div class="input-group">
-            <input type="password" id="userApiKeyInput" placeholder="Enter your Secret Key...">
-        </div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-outline" style="padding: 12px;" onclick="clearApiKey()"><i data-lucide="trash-2"></i> Clear</button>
-            <button class="btn-main" style="padding: 12px; box-shadow: none;" onclick="saveApiKey()"><i data-lucide="save"></i> Save Key</button>
+    <div class="api-modal-overlay" id="apiModalOverlay">
+        <div class="api-modal">
+            <div class="api-modal-header">
+                <h3><i data-lucide="lock" class="text-blue-400"></i> API Security</h3>
+                <button class="menu-btn" onclick="toggleApiModal()"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="input-group">
+                <label>Your Frontend Key</label>
+                <input type="password" id="userApiKeyInput" placeholder="Enter your Secret Key...">
+                <p id="saveStatus" class="status-msg"></p>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top: 20px;">
+                <button class="btn-outline" style="padding: 12px; color: var(--text-dim);" onclick="clearApiKey()">Delete</button>
+                <button class="btn-main" style="padding: 12px;" onclick="saveApiKey()">Save Key</button>
+            </div>
         </div>
     </div>
 
@@ -216,13 +233,14 @@
             </div>
 
             <button class="btn-main" onclick="startAI()"><i data-lucide="cpu"></i> RUN INTELLIGENCE</button>
+            <p id="runErrorStatus" class="status-msg text-center mt-3"></p>
         </div>
     </div>
 
     <div id="resultsOverlay">
         <div class="overlay-header">
             <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
-            <span style="font-weight: bold; font-size: 1.1rem;" id="resultTitle">Results</span>
+            <span style="font-weight: bold; font-size: 1.1rem;">Results</span>
         </div>
         <div class="results-scroll" id="resultsArea"></div>
     </div>
@@ -235,91 +253,84 @@
     <script>
         lucide.createIcons();
         let currentMode = 'search';
-
-        // ==========================================
-        // 🔒 API KEY LOCAL STORAGE MANAGEMENT
-        // ==========================================
         const API_KEY_STORAGE_NAME = "SCFAI_FRONTEND_KEY";
 
-        function getUserApiKey() {
-            return localStorage.getItem(API_KEY_STORAGE_NAME) || "";
+        // ==========================================
+        // UI TOGGLES (The Clean "Meta Studio" Way)
+        // ==========================================
+        function toggleSidebar() {
+            const drawer = document.getElementById('sideDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('active');
+            overlay.classList.toggle('active');
         }
 
-        function openApiModal() {
-            document.getElementById('sideDrawer').classList.remove('active');
-            document.getElementById('drawerOverlay').classList.remove('active');
-            document.getElementById('userApiKeyInput').value = getUserApiKey();
-            document.getElementById('apiModalOverlay').classList.add('active');
-            document.getElementById('apiModal').classList.add('active');
-            history.replaceState({view: 'apimodal'}, '');
-        }
-
-        function closeApiModal() {
-            document.getElementById('apiModalOverlay').classList.remove('active');
-            document.getElementById('apiModal').classList.remove('active');
-            if(history.state?.view === 'apimodal') history.back();
-        }
-
-        function saveApiKey() {
-            const key = document.getElementById('userApiKeyInput').value.trim();
-            if(key) {
-                localStorage.setItem(API_KEY_STORAGE_NAME, key);
-                alert("Key saved securely to your device!");
-                closeApiModal();
+        function toggleApiModal() {
+            const overlay = document.getElementById('apiModalOverlay');
+            const status = document.getElementById('saveStatus');
+            
+            if (overlay.classList.contains('active')) {
+                // Closing
+                overlay.classList.remove('active');
             } else {
-                alert("Please enter a valid key!");
+                // Opening
+                document.getElementById('userApiKeyInput').value = localStorage.getItem(API_KEY_STORAGE_NAME) || "";
+                status.className = "status-msg"; // reset status
+                status.innerText = "";
+                overlay.classList.add('active');
+                
+                // Close sidebar if open
+                if (document.getElementById('sideDrawer').classList.contains('active')) {
+                    toggleSidebar();
+                }
             }
         }
 
-        function clearApiKey() {
-            localStorage.removeItem(API_KEY_STORAGE_NAME);
-            document.getElementById('userApiKeyInput').value = "";
-            alert("Key deleted from this device!");
-        }
-
-        // ==========================================
-        // UI & VIEW MANAGEMENT
-        // ==========================================
         function switchMode(m) {
             currentMode = m;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(m)));
             document.getElementById('searchView').style.display = m === 'search' ? 'block' : 'none';
             document.getElementById('timelineView').style.display = m === 'timeline' ? 'block' : 'none';
-        }
-
-        function openDrawer() {
-            document.getElementById('sideDrawer').classList.add('active');
-            document.getElementById('drawerOverlay').classList.add('active');
-            history.pushState({view: 'drawer'}, '');
-        }
-
-        function closeDrawer() {
-            document.getElementById('sideDrawer').classList.remove('active');
-            document.getElementById('drawerOverlay').classList.remove('active');
-            if(history.state?.view === 'drawer') history.back();
+            document.getElementById('runErrorStatus').className = "status-msg";
         }
 
         function openResults() {
             document.getElementById('resultsOverlay').style.display = 'flex';
-            history.pushState({view: 'results'}, '');
         }
 
         function closeResults() {
             document.getElementById('resultsOverlay').style.display = 'none';
-            if(history.state?.view === 'results') history.back();
         }
 
-        // Native back button handler for everything
-        window.onpopstate = (e) => {
-            document.getElementById('sideDrawer').classList.remove('active');
-            document.getElementById('drawerOverlay').classList.remove('active');
-            document.getElementById('apiModal').classList.remove('active');
-            document.getElementById('apiModalOverlay').classList.remove('active');
+        // ==========================================
+        // API KEY LOGIC (The Clean "Meta Studio" Way)
+        // ==========================================
+        function saveApiKey() {
+            const key = document.getElementById('userApiKeyInput').value.trim();
+            const status = document.getElementById('saveStatus');
             
-            if (!e.state || e.state.view !== 'results') {
-                document.getElementById('resultsOverlay').style.display = 'none';
+            if(key === '') {
+                status.innerText = "Please enter a valid key!";
+                status.className = "status-msg error";
+                return;
             }
-        };
+            
+            localStorage.setItem(API_KEY_STORAGE_NAME, key);
+            status.innerText = "API Key saved securely locally!";
+            status.className = "status-msg success";
+            
+            document.getElementById('runErrorStatus').className = "status-msg"; // clear run error
+            
+            setTimeout(() => { toggleApiModal(); }, 1200);
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE_NAME);
+            document.getElementById('userApiKeyInput').value = "";
+            const status = document.getElementById('saveStatus');
+            status.innerText = "Key removed from browser!";
+            status.className = "status-msg warn";
+        }
 
         // ==========================================
         // AI TASK POLLING LOGIC
@@ -327,9 +338,13 @@
         const steps = ["Groq Brainstorming...", "FAISS Mapping...", "CLIP Vision Checking...", "Finalizing HD Clips..."];
         
         async function startAI() {
-            const userKey = getUserApiKey();
+            const userKey = localStorage.getItem(API_KEY_STORAGE_NAME);
+            const runStatus = document.getElementById('runErrorStatus');
+            
             if(!userKey) {
-                alert("Please set your API Key in Settings first!");
+                runStatus.innerText = "Please save your API Key in settings first!";
+                runStatus.className = "status-msg error";
+                setTimeout(() => toggleApiModal(), 500);
                 return;
             }
 
@@ -357,21 +372,24 @@
                 });
                 const data = await res.json();
                 
-                if (data.success) pollStatus(data.task_id, timer, userKey);
-                else {
+                if (data.success) {
+                    pollStatus(data.task_id, timer, userKey);
+                } else {
                     clearInterval(timer);
                     loader.style.display = 'none';
-                    if (res.status === 401) alert("Unauthorized: Invalid API Key!");
-                    else alert(data.error);
+                    runStatus.innerText = res.status === 401 ? "Unauthorized: Invalid API Key!" : data.error;
+                    runStatus.className = "status-msg error";
                 }
             } catch (err) {
                 clearInterval(timer);
                 loader.style.display = 'none';
-                alert("Connection Failed. Make sure the backend is awake.");
+                runStatus.innerText = "Connection Failed. Backend might be sleeping.";
+                runStatus.className = "status-msg error";
             }
         }
 
         async function pollStatus(tid, timer, userKey) {
+            const runStatus = document.getElementById('runErrorStatus');
             const poll = setInterval(async () => {
                 try {
                     const res = await fetch(`/api/status/${tid}`, {
@@ -388,7 +406,8 @@
                         clearInterval(poll);
                         clearInterval(timer);
                         document.getElementById('loader').style.display = 'none';
-                        alert(data.task.error);
+                        runStatus.innerText = data.task.error;
+                        runStatus.className = "status-msg error";
                     }
                 } catch(err) {
                     console.log("Polling...");
@@ -440,8 +459,9 @@
             openResults();
         }
 
+        // PWA Setup
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW Register Failed", err));
+            navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW Error", err));
         }
     </script>
 </body>
