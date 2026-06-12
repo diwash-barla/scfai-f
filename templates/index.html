@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="theme-color" content="#0b0f19">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/favicon.ico">
+    
     <title>StockClip AI Pro</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -173,10 +178,8 @@
         <div id="statusDot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
     </header>
 
-    <!-- Sidebar Overlay -->
     <div class="drawer-overlay" id="drawerOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- Sidebar -->
     <div class="side-drawer" id="sideDrawer">
         <div class="drawer-header">
             <h3>MENU</h3>
@@ -192,7 +195,6 @@
         </div>
     </div>
 
-    <!-- API Key Modal -->
     <div class="modal-overlay" id="apiModalOverlay" onclick="handleModalOverlayClick(event)">
         <div class="modal-box">
             <div class="modal-header">
@@ -213,7 +215,6 @@
         </div>
     </div>
 
-    <!-- Docs Page -->
     <div id="docsPage">
         <div class="docs-header">
             <button class="menu-btn" onclick="closeDocs()"><i data-lucide="chevron-left"></i></button>
@@ -291,7 +292,6 @@
         </div>
     </div>
 
-    <!-- Main Tabs -->
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchMode('search')"><i data-lucide="search"></i> Clips</button>
         <button class="tab-btn" onclick="switchMode('timeline')"><i data-lucide="clapperboard"></i> Script</button>
@@ -336,7 +336,6 @@
         </div>
     </div>
 
-    <!-- Results Overlay -->
     <div id="resultsOverlay">
         <div class="overlay-header">
             <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
@@ -345,7 +344,6 @@
         <div class="results-scroll" id="resultsArea"></div>
     </div>
 
-    <!-- Loader -->
     <div class="loader-wrap" id="loader">
         <div class="spinner"></div>
         <p id="loaderText" style="margin-top: 20px; font-weight: 600; color: var(--accent);"></p>
