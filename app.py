@@ -42,7 +42,7 @@ async def read_docs(request: Request):
     return templates.TemplateResponse(request=request, name="docs.html")
 
 # ==========================================
-# 📱 PWA & Static Routes (No Vercel.json needed!)
+# 📱 PWA & Static Routes (FastAPI Style)
 # ==========================================
 @app.get("/manifest.json")
 async def serve_manifest():
@@ -51,6 +51,14 @@ async def serve_manifest():
 @app.get("/sw.js")
 async def serve_sw():
     return FileResponse(os.path.join(BASE_DIR, "static/sw.js"), media_type="application/javascript")
+
+@app.get("/favicon.ico")
+async def serve_favicon():
+    # अगर static फोल्डर में तुम्हारा कोई आइकॉन है, तो उसका नाम यहाँ सेट कर दो
+    icon_path = os.path.join(BASE_DIR, "static/favicon.png") # या .ico
+    if os.path.exists(icon_path):
+        return FileResponse(icon_path, media_type="image/png")
+    return {"message": "No favicon found"}
 
 # ==========================================
 # 🔄 API Proxy Routes
