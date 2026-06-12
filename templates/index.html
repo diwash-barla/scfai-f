@@ -121,7 +121,7 @@
 
         /* Video Card */
         .video-card { background: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
-        .video-thumb { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+        .video-thumb { position: relative; width: 100%; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
         
@@ -156,7 +156,7 @@
             <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
         </div>
         <div class="drawer-links">
-            <a href="/docs" class="drawer-link"><i data-lucide="book-open"></i> API Docs</a>
+            <button class="drawer-link" onclick="goToDocs()"><i data-lucide="book-open"></i> API Docs</button>
             <button class="drawer-link" onclick="openApiModal()"><i data-lucide="key"></i> API Keys</button>
             <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
         </div>
@@ -244,20 +244,12 @@
             return localStorage.getItem(API_KEY_STORAGE_NAME) || "";
         }
 
-        // 🔥 THE FIX: Removed closeDrawer() call to prevent history.back() race condition
         function openApiModal() {
-            // Manually hide the drawer classes without messing with the history
             document.getElementById('sideDrawer').classList.remove('active');
             document.getElementById('drawerOverlay').classList.remove('active');
-            
-            // Set input value
             document.getElementById('userApiKeyInput').value = getUserApiKey();
-            
-            // Show modal
             document.getElementById('apiModalOverlay').classList.add('active');
             document.getElementById('apiModal').classList.add('active');
-            
-            // Swap the history state from 'drawer' to 'apimodal'
             history.replaceState({view: 'apimodal'}, '');
         }
 
@@ -306,6 +298,14 @@
             if(history.state?.view === 'drawer') history.back();
         }
 
+        // 🔥 FIX: Proper Docs Navigation without breaking history state
+        function goToDocs() {
+            closeDrawer();
+            setTimeout(() => {
+                window.location.href = '/docs';
+            }, 150);
+        }
+
         function openResults() {
             document.getElementById('resultsOverlay').style.display = 'flex';
             history.pushState({view: 'results'}, '');
@@ -337,7 +337,6 @@
             const userKey = getUserApiKey();
             if(!userKey) {
                 alert("Please set your API Key in Settings first!");
-                // Give user a chance to open modal manually via menu
                 return;
             }
 
@@ -408,11 +407,15 @@
             const container = document.getElementById('resultsArea');
             container.innerHTML = '';
             
+            // 🔥 FIX: Dynamic Aspect Ratio Checker
+            const userOrientation = document.getElementById('orientation').value;
+            const aspectStyle = userOrientation === 'portrait' ? 'aspect-ratio: 9/16;' : 'aspect-ratio: 16/9;';
+            
             if (currentMode === 'search') {
                 data.forEach(clip => {
                     container.innerHTML += `
                         <div class="video-card">
-                            <div class="video-thumb">
+                            <div class="video-thumb" style="${aspectStyle}">
                                 <video src="${clip.download_url}" poster="${clip.thumbnail}" muted loop onmouseover="this.play()" onmouseout="this.pause()" playsinline></video>
                                 <span class="badge">${clip.quality_label}</span>
                             </div>
@@ -435,7 +438,7 @@
                             <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:10px;">Scene ${idx+1}: "${item.scene_text}"</p>
                             ${item.clip ? `
                                 <div class="video-card">
-                                    <div class="video-thumb"><video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" playsinline></video></div>
+                                    <div class="video-thumb" style="${aspectStyle}"><video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" playsinline></video></div>
                                 </div>
                             ` : '<p style="color:red; font-size:0.9rem;">No high quality clip found for this scene.</p>'}
                         </div>
