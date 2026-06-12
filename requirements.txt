@@ -1,4 +1,4 @@
-flask
-gunicorn
-flask-cors
+fastapi
+uvicorn
 requests
+jinja2
