@@ -1,29 +1,21 @@
-# हल्का और सुरक्षित पाइथन बेस इमेज इस्तेमाल करें
-FROM python:3.11-slim
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
-# हगिंग फेस के लिए एक नया यूज़र (UID 1000) बनाएँ
-RUN useradd -m -u 1000 user
-
-# वर्किंग डायरेक्टरी सेट करें
+# Set working directory
 WORKDIR /app
 
-# पहले requirements कॉपी करें और डिपेंडेंसी इंस्टॉल करें
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# अब एप्लीकेशन की बाकी फाइलें कॉपी करें
-COPY app.py .
-COPY engine.py .
-COPY index.html .
+# Copy the current directory contents into the container at /app
+COPY . .
 
-# डायरेक्टरी की ओनरशिप नए यूज़र को दें
-RUN chown -R user:user /app
+# Expose the port that the app runs on
+EXPOSE 8080
 
-# यूज़र स्विच करें (हगिंग फेस सुरक्षा नियमों के लिए)
-USER user
+# Define environment variable for dynamic port binding (Render/Cloud Run uses $PORT)
+ENV PORT=8080
 
-# हगिंग फेस डिफ़ॉल्ट पोर्ट 7860 का उपयोग करता है
-EXPOSE 7860
-
-# Gunicorn को पोर्ट 7860 पर रन करें (timeout 120 सेकंड रखा है ताकि API रिक्वेस्ट बीच में न टूटें)
-CMD ["gunicorn", "--bind", "0.0.0.0:7860", "--workers", "4", "--timeout", "120", "app:app"]
+# Command to run the application using Gunicorn for production
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT app:app"]
