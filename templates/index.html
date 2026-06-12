@@ -32,7 +32,38 @@
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
+        
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .menu-btn { background: transparent; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center; }
         .logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(45deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Side Drawer (Hamburger Menu) */
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 400;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .side-drawer {
+            position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+            background: var(--surface); z-index: 500; transition: left 0.3s ease;
+            border-right: 1px solid rgba(255,255,255,0.05); box-shadow: 5px 0 20px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column;
+        }
+        .side-drawer.active { left: 0; }
+        
+        .drawer-header {
+            padding: calc(20px + var(--safe-area-top)) 20px 20px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .drawer-header h3 { margin: 0; font-size: 1.1rem; color: var(--text); letter-spacing: 1px; }
+        
+        .drawer-links { padding: 20px 0; display: flex; flex-direction: column; }
+        .drawer-link {
+            padding: 15px 25px; display: flex; align-items: center; gap: 15px;
+            color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s;
+        }
+        .drawer-link:hover { background: rgba(255,255,255,0.05); color: var(--text); border-left: 3px solid var(--primary); }
 
         /* Navigation Tabs */
         .nav-tabs {
@@ -67,12 +98,12 @@
             display: flex; align-items: center; justify-content: center; gap: 10px;
         }
 
-        /* Results Area - Full Screen Overly for Mobile Feel */
+        /* Results Area */
         #resultsOverlay {
             position: fixed; inset: 0; background: var(--bg); z-index: 200;
             display: none; flex-direction: column;
         }
-        .overlay-header { padding: 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .overlay-header { padding: calc(15px + var(--safe-area-top)) 20px 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .results-scroll { flex: 1; overflow-y: auto; padding: 20px; }
 
         /* Video Card */
@@ -84,14 +115,6 @@
         .card-info { padding: 15px; }
         .ai-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
         .tag-chip { color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
-
-        /* Floating Action Button for Docs */
-        .fab-docs {
-            position: fixed; bottom: 25px; right: 25px; background: var(--surface);
-            width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; border: 1px solid var(--primary); color: var(--primary);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-decoration: none;
-        }
 
         /* Progress Modal */
         .loader-wrap {
@@ -106,9 +129,25 @@
 <body>
 
     <header>
-        <div class="logo">STOCKCLIP AI</div>
+        <div class="header-left">
+            <button class="menu-btn" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+            <div class="logo">STOCKCLIP AI</div>
+        </div>
         <div id="statusDot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
     </header>
+
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <h3>SETTINGS</h3>
+            <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="drawer-links">
+            <a href="/docs" class="drawer-link"><i data-lucide="book-open"></i> API Docs</a>
+            <a href="#" class="drawer-link"><i data-lucide="key"></i> API Keys</a>
+            <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
+        </div>
+    </div>
 
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchMode('search')"><i data-lucide="search"></i> Clips</button>
@@ -153,12 +192,10 @@
         </div>
     </div>
 
-    <a href="/docs" class="fab-docs"><i data-lucide="book-open"></i></a>
-
     <div id="resultsOverlay">
         <div class="overlay-header">
-            <button onclick="closeResults()" style="background: none; border: none; color: white;"><i data-lucide="chevron-left"></i></button>
-            <span style="font-weight: bold;" id="resultTitle">Results</span>
+            <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
+            <span style="font-weight: bold; font-size: 1.1rem;" id="resultTitle">Results</span>
         </div>
         <div class="results-scroll" id="resultsArea"></div>
     </div>
@@ -169,7 +206,7 @@
     </div>
 
     <script>
-        // 🔥 FRONTEND SECURITY KEY (Vercel Env में जो है वही डालें)
+        // 🔥 FRONTEND SECURITY KEY
         const API_KEY = "my-super-secret-key"; 
         
         lucide.createIcons();
@@ -182,7 +219,21 @@
             document.getElementById('timelineView').style.display = m === 'timeline' ? 'block' : 'none';
         }
 
-        // History API for Back Button control
+        // ==========================================
+        // History API (Back Button Management)
+        // ==========================================
+        function openDrawer() {
+            document.getElementById('sideDrawer').classList.add('active');
+            document.getElementById('drawerOverlay').classList.add('active');
+            history.pushState({view: 'drawer'}, '');
+        }
+
+        function closeDrawer() {
+            document.getElementById('sideDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            if(history.state?.view === 'drawer') history.back();
+        }
+
         function openResults() {
             document.getElementById('resultsOverlay').style.display = 'flex';
             history.pushState({view: 'results'}, '');
@@ -193,12 +244,21 @@
             if(history.state?.view === 'results') history.back();
         }
 
+        // Handle native back button press
         window.onpopstate = (e) => {
+            // Close drawer if it was open
+            document.getElementById('sideDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            
+            // Close results if it wasn't the active state
             if (!e.state || e.state.view !== 'results') {
                 document.getElementById('resultsOverlay').style.display = 'none';
             }
         };
 
+        // ==========================================
+        // AI Task Polling Logic
+        // ==========================================
         const steps = ["Groq Brainstorming...", "FAISS Mapping...", "CLIP Vision Checking...", "Finalizing HD Clips..."];
         
         async function startAI() {
@@ -219,7 +279,6 @@
             const endpoint = currentMode === 'search' ? '/api/search' : '/api/timeline';
 
             try {
-                // Initial Task Start
                 const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
@@ -236,27 +295,31 @@
             } catch (err) {
                 clearInterval(timer);
                 loader.style.display = 'none';
-                alert("Connection Failed");
+                alert("Connection Failed. Make sure the backend is awake.");
             }
         }
 
         async function pollStatus(tid, timer) {
             const poll = setInterval(async () => {
-                const res = await fetch(`/api/status/${tid}`, {
-                    headers: { 'X-API-Key': API_KEY }
-                });
-                const data = await res.json();
-                
-                if (data.task.status === 'completed') {
-                    clearInterval(poll);
-                    clearInterval(timer);
-                    document.getElementById('loader').style.display = 'none';
-                    renderResults(data.task.data);
-                } else if (data.task.status === 'error') {
-                    clearInterval(poll);
-                    clearInterval(timer);
-                    document.getElementById('loader').style.display = 'none';
-                    alert(data.task.error);
+                try {
+                    const res = await fetch(`/api/status/${tid}`, {
+                        headers: { 'X-API-Key': API_KEY }
+                    });
+                    const data = await res.json();
+                    
+                    if (data.task.status === 'completed') {
+                        clearInterval(poll);
+                        clearInterval(timer);
+                        document.getElementById('loader').style.display = 'none';
+                        renderResults(data.task.data);
+                    } else if (data.task.status === 'error') {
+                        clearInterval(poll);
+                        clearInterval(timer);
+                        document.getElementById('loader').style.display = 'none';
+                        alert(data.task.error);
+                    }
+                } catch(err) {
+                    console.log("Polling...");
                 }
             }, 3000);
         }
@@ -294,7 +357,7 @@
                                 <div class="video-card">
                                     <div class="video-thumb"><video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" playsinline></video></div>
                                 </div>
-                            ` : '<p style="color:red">No clip found</p>'}
+                            ` : '<p style="color:red; font-size:0.9rem;">No high quality clip found for this scene.</p>'}
                         </div>
                     `;
                 });
@@ -302,8 +365,10 @@
             openResults();
         }
 
-        // SW Registration
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+        // SW Registration for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW Register Failed", err));
+        }
     </script>
 </body>
 </html>
