@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>API Docs - StockClip AI Pro</title>
+    <title>StockClip AI Pro</title>
     <link rel="manifest" href="/manifest.json">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -20,125 +20,425 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
             background: var(--bg); color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif;
-            margin: 0; line-height: 1.6;
+            margin: 0; overflow-x: hidden; min-height: 100vh;
         }
 
+        /* App Shell Header */
         header {
             padding: calc(15px + var(--safe-area-top)) 20px 15px;
             background: rgba(22, 27, 50, 0.8);
             backdrop-filter: blur(10px);
             position: sticky; top: 0; z-index: 100;
-            display: flex; align-items: center; gap: 15px;
+            display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
         
-        .back-btn { background: none; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center; }
-        .title { font-size: 1.2rem; font-weight: 800; background: linear-gradient(45deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .menu-btn { background: transparent; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center; }
+        .logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(45deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .container { padding: 20px; max-width: 800px; margin: 0 auto; }
+        /* Side Drawer (Hamburger Menu) */
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 400;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .drawer-overlay.active { opacity: 1; pointer-events: auto; }
         
-        h2 { margin-top: 30px; font-size: 1.4rem; color: var(--text); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-        h3 { font-size: 1.1rem; color: var(--accent); margin-top: 20px; display: flex; align-items: center; gap: 8px; }
-        p { color: var(--text-dim); font-size: 0.95rem; }
-
-        .code-block {
-            background: #000; padding: 15px; border-radius: 12px; font-family: monospace;
-            font-size: 0.85rem; color: #a5b4fc; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1);
-            margin: 10px 0;
+        .side-drawer {
+            position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
+            background: var(--surface); z-index: 500; transition: left 0.3s ease;
+            border-right: 1px solid rgba(255,255,255,0.05); box-shadow: 5px 0 20px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column;
         }
-
-        .endpoint {
-            background: rgba(79, 70, 229, 0.1); border: 1px solid var(--primary);
-            padding: 8px 12px; border-radius: 8px; font-family: monospace; display: inline-block;
-            color: #818cf8; font-weight: bold; margin-bottom: 15px;
+        .side-drawer.active { left: 0; }
+        
+        .drawer-header {
+            padding: calc(20px + var(--safe-area-top)) 20px 20px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
+        .drawer-header h3 { margin: 0; font-size: 1.1rem; color: var(--text); letter-spacing: 1px; }
+        
+        .drawer-links { padding: 20px 0; display: flex; flex-direction: column; }
+        .drawer-link {
+            padding: 15px 25px; display: flex; align-items: center; gap: 15px; background: transparent; border: none;
+            color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer; text-align: left; font-size: 1rem;
+        }
+        .drawer-link:hover { background: rgba(255,255,255,0.05); color: var(--text); border-left: 3px solid var(--primary); }
 
-        .method { color: #34d399; }
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex; background: var(--surface); margin: 20px; border-radius: 12px; padding: 5px; gap: 5px;
+        }
+        .tab-btn {
+            flex: 1; border: none; background: transparent; color: var(--text-dim); padding: 12px;
+            border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        /* Search Section */
+        .content-wrap { padding: 0 20px 100px; }
+        .glass-card { background: var(--surface); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        
+        .input-group { margin-bottom: 20px; }
+        label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
+        
+        input, textarea, select {
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 15px; color: white; font-size: 1rem; outline: none; transition: 0.3s;
+        }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        textarea { height: 120px; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .btn-main, .btn-outline {
+            width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px; border: none;
+        }
+        .btn-main { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); }
+        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .btn-outline:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
+
+        /* API Key Modal */
+        .api-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+            background: var(--surface); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px;
+            z-index: 600; border: 1px solid rgba(255,255,255,0.1); opacity: 0; pointer-events: none;
+            transition: all 0.3s ease; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .api-modal.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+        .api-modal h3 { margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px; }
+        .api-modal p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
+
+        /* Results Area */
+        #resultsOverlay {
+            position: fixed; inset: 0; background: var(--bg); z-index: 200;
+            display: none; flex-direction: column;
+        }
+        .overlay-header { padding: calc(15px + var(--safe-area-top)) 20px 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .results-scroll { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* Video Card */
+        .video-card { background: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
+        .video-thumb { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .card-info { padding: 15px; }
+        .ai-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
+        .tag-chip { color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
+
+        /* Progress Modal */
+        .loader-wrap {
+            position: fixed; inset: 0; background: rgba(11, 15, 25, 0.9); z-index: 300;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 40px;
+        }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <header>
-        <button class="back-btn" onclick="history.back()"><i data-lucide="arrow-left"></i></button>
-        <div class="title">API Documentation</div>
+        <div class="header-left">
+            <button class="menu-btn" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+            <div class="logo">STOCKCLIP AI</div>
+        </div>
+        <div id="statusDot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
     </header>
 
-    <div class="container">
-        <p>Welcome to the StockClip AI API. This service uses an asynchronous polling architecture to prevent timeouts.</p>
-
-        <h2>Authentication</h2>
-        <p>All requests to the frontend proxy must include the secret API key in the headers.</p>
-        <div class="code-block">
-Headers:
-{
-    "Content-Type": "application/json",
-    "X-API-Key": "your-super-secret-key"
-}
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <h3>SETTINGS</h3>
+            <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
         </div>
-
-        <h2>1. Search API (Clips)</h2>
-        <div class="endpoint"><span class="method">POST</span> /api/search</div>
-        <p>Starts a vision-based search for individual stock clips.</p>
-        
-        <h3>Request Body</h3>
-        <div class="code-block">
-{
-    "query": "Man meditating seashore",
-    "orientation": "landscape", // or "portrait"
-    "quality": "1080" // or "4k", "any"
-}
+        <div class="drawer-links">
+            <a href="/docs" class="drawer-link"><i data-lucide="book-open"></i> API Docs</a>
+            <button class="drawer-link" onclick="openApiModal()"><i data-lucide="key"></i> API Keys</button>
+            <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
         </div>
+    </div>
 
-        <h3>Response</h3>
-        <div class="code-block">
-{
-    "success": true,
-    "task_id": "a1b2c3d4-..."
-}
+    <div class="drawer-overlay" id="apiModalOverlay" onclick="closeApiModal()" style="z-index: 550;"></div>
+    <div class="api-modal" id="apiModal">
+        <h3><i data-lucide="lock"></i> Security</h3>
+        <p>Enter your Frontend Secret API Key. It will be stored securely on this device's local storage.</p>
+        <div class="input-group">
+            <input type="password" id="userApiKeyInput" placeholder="Enter your Secret Key...">
         </div>
-
-        <h2>2. Auto-Pilot (Timeline) API</h2>
-        <div class="endpoint"><span class="method">POST</span> /api/timeline</div>
-        <p>Analyzes a full script and generates a sequence of video clips.</p>
-
-        <h3>Request Body</h3>
-        <div class="code-block">
-{
-    "script": "The universe is vast. Black holes are mysterious.",
-    "orientation": "landscape",
-    "quality": "1080"
-}
+        <div style="display:flex; gap:10px;">
+            <button class="btn-outline" style="padding: 12px;" onclick="clearApiKey()"><i data-lucide="trash-2"></i> Clear</button>
+            <button class="btn-main" style="padding: 12px; box-shadow: none;" onclick="saveApiKey()"><i data-lucide="save"></i> Save Key</button>
         </div>
+    </div>
 
-        <h2>3. Task Status Polling</h2>
-        <div class="endpoint"><span class="method">GET</span> /api/status/{task_id}</div>
-        <p>Check the status of your queued task. Poll this endpoint every 3 seconds until status is "completed".</p>
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchMode('search')"><i data-lucide="search"></i> Clips</button>
+        <button class="tab-btn" onclick="switchMode('timeline')"><i data-lucide="clapperboard"></i> Script</button>
+    </div>
 
-        <h3>Response (Processing)</h3>
-        <div class="code-block">
-{
-    "success": true,
-    "task": {
-        "status": "processing"
-    }
-}
+    <div class="content-wrap">
+        <div class="glass-card">
+            <div id="searchView">
+                <div class="input-group">
+                    <label>What scene do you need?</label>
+                    <input type="text" id="queryInput" placeholder="e.g. Man hiking in mountains 4k">
+                </div>
+            </div>
+
+            <div id="timelineView" style="display: none;">
+                <div class="input-group">
+                    <label>Paste your full script</label>
+                    <textarea id="scriptInput" placeholder="The AI will analyze each sentence and find the perfect clips..."></textarea>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="input-group">
+                    <label>Orientation</label>
+                    <select id="orientation">
+                        <option value="landscape">Landscape</option>
+                        <option value="portrait">Portrait</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Quality</label>
+                    <select id="quality">
+                        <option value="1080">1080p+</option>
+                        <option value="4k">4K Only</option>
+                        <option value="any">Any</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-main" onclick="startAI()"><i data-lucide="cpu"></i> RUN INTELLIGENCE</button>
         </div>
+    </div>
 
-        <h3>Response (Completed)</h3>
-        <div class="code-block">
-{
-    "success": true,
-    "task": {
-        "status": "completed",
-        "data": [ ... array of video objects ... ]
-    }
-}
+    <div id="resultsOverlay">
+        <div class="overlay-header">
+            <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
+            <span style="font-weight: bold; font-size: 1.1rem;" id="resultTitle">Results</span>
         </div>
+        <div class="results-scroll" id="resultsArea"></div>
+    </div>
 
+    <div class="loader-wrap" id="loader">
+        <div class="spinner"></div>
+        <p id="loaderText" style="margin-top: 20px; font-weight: 600; color: var(--accent);"></p>
     </div>
 
     <script>
         lucide.createIcons();
+        let currentMode = 'search';
+
+        // ==========================================
+        // 🔒 API KEY LOCAL STORAGE MANAGEMENT
+        // ==========================================
+        const API_KEY_STORAGE_NAME = "SCFAI_FRONTEND_KEY";
+
+        function getUserApiKey() {
+            return localStorage.getItem(API_KEY_STORAGE_NAME) || "";
+        }
+
+        function openApiModal() {
+            closeDrawer(); // Close drawer first
+            document.getElementById('userApiKeyInput').value = getUserApiKey();
+            document.getElementById('apiModalOverlay').classList.add('active');
+            document.getElementById('apiModal').classList.add('active');
+            history.pushState({view: 'apimodal'}, '');
+        }
+
+        function closeApiModal() {
+            document.getElementById('apiModalOverlay').classList.remove('active');
+            document.getElementById('apiModal').classList.remove('active');
+            if(history.state?.view === 'apimodal') history.back();
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('userApiKeyInput').value.trim();
+            if(key) {
+                localStorage.setItem(API_KEY_STORAGE_NAME, key);
+                alert("Key saved securely to your device!");
+                closeApiModal();
+            } else {
+                alert("Please enter a valid key!");
+            }
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE_NAME);
+            document.getElementById('userApiKeyInput').value = "";
+            alert("Key deleted from this device!");
+        }
+
+        // ==========================================
+        // UI & VIEW MANAGEMENT
+        // ==========================================
+        function switchMode(m) {
+            currentMode = m;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(m)));
+            document.getElementById('searchView').style.display = m === 'search' ? 'block' : 'none';
+            document.getElementById('timelineView').style.display = m === 'timeline' ? 'block' : 'none';
+        }
+
+        function openDrawer() {
+            document.getElementById('sideDrawer').classList.add('active');
+            document.getElementById('drawerOverlay').classList.add('active');
+            history.pushState({view: 'drawer'}, '');
+        }
+
+        function closeDrawer() {
+            document.getElementById('sideDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            if(history.state?.view === 'drawer') history.back();
+        }
+
+        function openResults() {
+            document.getElementById('resultsOverlay').style.display = 'flex';
+            history.pushState({view: 'results'}, '');
+        }
+
+        function closeResults() {
+            document.getElementById('resultsOverlay').style.display = 'none';
+            if(history.state?.view === 'results') history.back();
+        }
+
+        // Native back button handler for everything
+        window.onpopstate = (e) => {
+            document.getElementById('sideDrawer').classList.remove('active');
+            document.getElementById('drawerOverlay').classList.remove('active');
+            document.getElementById('apiModal').classList.remove('active');
+            document.getElementById('apiModalOverlay').classList.remove('active');
+            
+            if (!e.state || e.state.view !== 'results') {
+                document.getElementById('resultsOverlay').style.display = 'none';
+            }
+        };
+
+        // ==========================================
+        // AI TASK POLLING LOGIC
+        // ==========================================
+        const steps = ["Groq Brainstorming...", "FAISS Mapping...", "CLIP Vision Checking...", "Finalizing HD Clips..."];
+        
+        async function startAI() {
+            const userKey = getUserApiKey();
+            if(!userKey) {
+                alert("Please set your API Key in Settings first!");
+                openApiModal();
+                return;
+            }
+
+            const loader = document.getElementById('loader');
+            const loaderText = document.getElementById('loaderText');
+            loader.style.display = 'flex';
+            
+            let sIdx = 0;
+            const timer = setInterval(() => {
+                loaderText.innerText = steps[sIdx % steps.length];
+                sIdx++;
+            }, 2000);
+
+            const payload = currentMode === 'search' 
+                ? { query: document.getElementById('queryInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value }
+                : { script: document.getElementById('scriptInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value };
+
+            const endpoint = currentMode === 'search' ? '/api/search' : '/api/timeline';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-API-Key': userKey },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (data.success) pollStatus(data.task_id, timer, userKey);
+                else {
+                    clearInterval(timer);
+                    loader.style.display = 'none';
+                    if (res.status === 401) alert("Unauthorized: Invalid API Key!");
+                    else alert(data.error);
+                }
+            } catch (err) {
+                clearInterval(timer);
+                loader.style.display = 'none';
+                alert("Connection Failed. Make sure the backend is awake.");
+            }
+        }
+
+        async function pollStatus(tid, timer, userKey) {
+            const poll = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/status/${tid}`, {
+                        headers: { 'X-API-Key': userKey }
+                    });
+                    const data = await res.json();
+                    
+                    if (data.task.status === 'completed') {
+                        clearInterval(poll);
+                        clearInterval(timer);
+                        document.getElementById('loader').style.display = 'none';
+                        renderResults(data.task.data);
+                    } else if (data.task.status === 'error') {
+                        clearInterval(poll);
+                        clearInterval(timer);
+                        document.getElementById('loader').style.display = 'none';
+                        alert(data.task.error);
+                    }
+                } catch(err) {
+                    console.log("Polling...");
+                }
+            }, 3000);
+        }
+
+        function renderResults(data) {
+            const container = document.getElementById('resultsArea');
+            container.innerHTML = '';
+            
+            if (currentMode === 'search') {
+                data.forEach(clip => {
+                    container.innerHTML += `
+                        <div class="video-card">
+                            <div class="video-thumb">
+                                <video src="${clip.download_url}" poster="${clip.thumbnail}" muted loop onmouseover="this.play()" onmouseout="this.pause()" playsinline></video>
+                                <span class="badge">${clip.quality_label}</span>
+                            </div>
+                            <div class="card-info">
+                                <div class="ai-meta">
+                                    <span><span class="tag-chip">CLIP Vision: ${clip.visual_score}%</span></span>
+                                    <span>🔍 ${clip.query_used}</span>
+                                </div>
+                                <div style="display:flex; gap:10px; margin-top:12px;">
+                                    <a href="${clip.download_url}" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                data.forEach((item, idx) => {
+                    container.innerHTML += `
+                        <div style="margin-bottom:30px;">
+                            <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:10px;">Scene ${idx+1}: "${item.scene_text}"</p>
+                            ${item.clip ? `
+                                <div class="video-card">
+                                    <div class="video-thumb"><video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" playsinline></video></div>
+                                </div>
+                            ` : '<p style="color:red; font-size:0.9rem;">No high quality clip found for this scene.</p>'}
+                        </div>
+                    `;
+                });
+            }
+            openResults();
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW Register Failed", err));
+        }
     </script>
 </body>
 </html>
