@@ -104,11 +104,27 @@ async def proxy_timeline(request_data: TimelineRequest, api_key: str = Depends(g
 @app.get("/api/status/{task_id}")
 async def proxy_status(task_id: str, api_key: str = Depends(get_api_key)):
     headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+
     try:
-        res = requests.get(f"{BACKEND_URL}/api/status/{task_id}", headers=headers, timeout=10)
+        res = requests.get(
+            f"{BACKEND_URL}/api/status/{task_id}",
+            headers=headers,
+            timeout=10
+        )
+
         if res.status_code == 200:
             return res.json()
-        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
 
+        raise HTTPException(
+            status_code=res.status_code,
+            detail=f"HF Space Error: {res.text[:100]}"
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Proxy Error: {str(e)}"
+        )
