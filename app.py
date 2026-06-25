@@ -76,39 +76,82 @@ class TimelineRequest(BaseModel):
 @app.post("/api/search")
 async def proxy_search(request_data: SearchRequest, api_key: str = Depends(get_api_key)):
     if not BACKEND_URL or "your-private-space" in BACKEND_URL:
-        raise HTTPException(status_code=500, detail="BACKEND_URL is not configured properly.")
+        raise HTTPException(
+            status_code=500, 
+            detail="BACKEND_URL is not configured properly."
+        )
         
     headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"} if HF_TOKEN else {"Content-Type": "application/json"}
     
     try:
-        res = requests.post(f"{BACKEND_URL}/api/search", json=request_data.dict(), headers=headers, timeout=10)
+        res = requests.post(
+            f"{BACKEND_URL}/api/search", 
+            json=request_data.dict(), 
+            headers=headers, 
+            timeout=10
+        )
+        
         if res.status_code == 202 or res.status_code == 200:
             return res.json()
-        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
+            
+        raise HTTPException(
+            status_code=res.status_code, 
+            detail=f"HF Space Error: {res.text[:100]}"
+        )
+        
     except requests.exceptions.Timeout:
-        raise HTTPException(status_code=504, detail="Backend is sleeping. Please wake it up.")
+        raise HTTPException(
+            status_code=504, 
+            detail="Backend is sleeping. Please wake it up."
+        )
+    except HTTPException:
+        # असली HTTP एरर को बायपास होने दें
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
+        # बाकी सभी अनचाहे एरर्स के लिए
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Proxy Error: {str(e)}"
+        )
+
 
 @app.post("/api/timeline")
 async def proxy_timeline(request_data: TimelineRequest, api_key: str = Depends(get_api_key)):
     headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"} if HF_TOKEN else {"Content-Type": "application/json"}
+    
     try:
-        res = requests.post(f"{BACKEND_URL}/api/timeline", json=request_data.dict(), headers=headers, timeout=10)
+        res = requests.post(
+            f"{BACKEND_URL}/api/timeline", 
+            json=request_data.dict(), 
+            headers=headers, 
+            timeout=10
+        )
+        
         if res.status_code == 202 or res.status_code == 200:
             return res.json()
-        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
+            
+        raise HTTPException(
+            status_code=res.status_code, 
+            detail=f"HF Space Error: {res.text[:100]}"
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Proxy Error: {str(e)}"
+        )
+
 
 @app.get("/api/status/{task_id}")
 async def proxy_status(task_id: str, api_key: str = Depends(get_api_key)):
     headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-
+    
     try:
         res = requests.get(
-            f"{BACKEND_URL}/api/status/{task_id}",
-            headers=headers,
+            f"{BACKEND_URL}/api/status/{task_id}", 
+            headers=headers, 
             timeout=10
         )
 
@@ -122,7 +165,6 @@ async def proxy_status(task_id: str, api_key: str = Depends(get_api_key)):
 
     except HTTPException:
         raise
-
     except Exception as e:
         raise HTTPException(
             status_code=500,
