@@ -1,5 +1,5 @@
 import os
-import requests
+import httpx  # 🔥 requests की जगह httpx (Async Networking)
 from fastapi import FastAPI, Request, HTTPException, Security, Depends
 from fastapi.security.api_key import APIKeyHeader
 from fastapi.responses import HTMLResponse, FileResponse
@@ -54,8 +54,7 @@ async def serve_sw():
 
 @app.get("/favicon.ico")
 async def serve_favicon():
-    # अगर static फोल्डर में तुम्हारा कोई आइकॉन है, तो उसका नाम यहाँ सेट कर दो
-    icon_path = os.path.join(BASE_DIR, "static/favicon.png") # या .ico
+    icon_path = os.path.join(BASE_DIR, "static/favicon.png")
     if os.path.exists(icon_path):
         return FileResponse(icon_path, media_type="image/png")
     return {"message": "No favicon found"}
@@ -76,43 +75,30 @@ class TimelineRequest(BaseModel):
 @app.post("/api/search")
 async def proxy_search(request_data: SearchRequest, api_key: str = Depends(get_api_key)):
     if not BACKEND_URL or "your-private-space" in BACKEND_URL:
-        raise HTTPException(
-            status_code=500, 
-            detail="BACKEND_URL is not configured properly."
-        )
+        raise HTTPException(status_code=500, detail="BACKEND_URL is not configured properly.")
         
     headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"} if HF_TOKEN else {"Content-Type": "application/json"}
     
     try:
-        res = requests.post(
-            f"{BACKEND_URL}/api/search", 
-            json=request_data.dict(), 
-            headers=headers, 
-            timeout=10
-        )
+        # 🔥 Async HTTP Client का इस्तेमाल
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.post(
+                f"{BACKEND_URL}/api/search", 
+                json=request_data.model_dump(), # 🔥 .dict() की जगह .model_dump()
+                headers=headers
+            )
         
-        if res.status_code == 202 or res.status_code == 200:
+        if res.status_code in [200, 202]:
             return res.json()
             
-        raise HTTPException(
-            status_code=res.status_code, 
-            detail=f"HF Space Error: {res.text[:100]}"
-        )
+        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
         
-    except requests.exceptions.Timeout:
-        raise HTTPException(
-            status_code=504, 
-            detail="Backend is sleeping. Please wake it up."
-        )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Backend is sleeping. Please wake it up.")
     except HTTPException:
-        # असली HTTP एरर को बायपास होने दें
         raise
     except Exception as e:
-        # बाकी सभी अनचाहे एरर्स के लिए
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Proxy Error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
 
 
 @app.post("/api/timeline")
@@ -120,28 +106,22 @@ async def proxy_timeline(request_data: TimelineRequest, api_key: str = Depends(g
     headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"} if HF_TOKEN else {"Content-Type": "application/json"}
     
     try:
-        res = requests.post(
-            f"{BACKEND_URL}/api/timeline", 
-            json=request_data.dict(), 
-            headers=headers, 
-            timeout=10
-        )
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.post(
+                f"{BACKEND_URL}/api/timeline", 
+                json=request_data.model_dump(), 
+                headers=headers
+            )
         
-        if res.status_code == 202 or res.status_code == 200:
+        if res.status_code in [200, 202]:
             return res.json()
             
-        raise HTTPException(
-            status_code=res.status_code, 
-            detail=f"HF Space Error: {res.text[:100]}"
-        )
+        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Proxy Error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
 
 
 @app.get("/api/status/{task_id}")
@@ -149,24 +129,18 @@ async def proxy_status(task_id: str, api_key: str = Depends(get_api_key)):
     headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
     
     try:
-        res = requests.get(
-            f"{BACKEND_URL}/api/status/{task_id}", 
-            headers=headers, 
-            timeout=10
-        )
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.get(
+                f"{BACKEND_URL}/api/status/{task_id}", 
+                headers=headers
+            )
 
         if res.status_code == 200:
             return res.json()
 
-        raise HTTPException(
-            status_code=res.status_code,
-            detail=f"HF Space Error: {res.text[:100]}"
-        )
+        raise HTTPException(status_code=res.status_code, detail=f"HF Space Error: {res.text[:100]}")
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Proxy Error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Proxy Error: {str(e)}")
