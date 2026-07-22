@@ -354,14 +354,24 @@
                     headers: { 'Content-Type': 'application/json', 'X-API-Key': userKey },
                     body: JSON.stringify(payload)
                 });
+                
                 const data = await res.json();
                 
-                if (data.success) pollStatus(data.task_id, timer, userKey);
-                else {
+                // 🔥 FIX: FastAPI Error Handling 
+                if (res.ok && data.success) {
+                    pollStatus(data.task_id, timer, userKey);
+                } else {
                     clearInterval(timer);
                     loader.style.display = 'none';
-                    if (res.status === 401) alert("Unauthorized: Invalid API Key!");
-                    else alert(data.error);
+                    
+                    // FastAPI "detail" कीवर्ड में एरर भेजता है, और कस्टम बैकएंड "error" में
+                    const errorMsg = data.detail || data.error || "An unknown error occurred.";
+                    
+                    if (res.status === 403) {
+                        alert("Access Denied: Invalid API Key!");
+                    } else {
+                        alert(`Error: ${errorMsg}`);
+                    }
                 }
             } catch (err) {
                 clearInterval(timer);
@@ -404,7 +414,8 @@
                     container.innerHTML += `
                         <div class="video-card">
                             <div class="video-thumb">
-                                <video src="${clip.download_url}" poster="${clip.thumbnail}" muted loop onmouseover="this.play()" onmouseout="this.pause()" playsinline></video>
+                                <!-- 🔥 FIX: Added 'controls' for mobile touch support -->
+                                <video src="${clip.download_url}" poster="${clip.thumbnail}" muted loop controls playsinline onmouseover="this.play()" onmouseout="this.pause()"></video>
                                 <span class="badge">${clip.quality_label}</span>
                             </div>
                             <div class="card-info">
@@ -413,7 +424,7 @@
                                     <span>🔍 ${clip.query_used}</span>
                                 </div>
                                 <div style="display:flex; gap:10px; margin-top:12px;">
-                                    <a href="${clip.download_url}" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
+                                    <a href="${clip.download_url}" target="_blank" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
                                 </div>
                             </div>
                         </div>
@@ -426,7 +437,13 @@
                             <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:10px;">Scene ${idx+1}: "${item.scene_text}"</p>
                             ${item.clip ? `
                                 <div class="video-card">
-                                    <div class="video-thumb"><video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" playsinline></video></div>
+                                    <div class="video-thumb">
+                                        <!-- 🔥 FIX: Added 'controls' here too -->
+                                        <video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop controls playsinline onmouseover="this.play()"></video>
+                                    </div>
+                                    <div class="card-info" style="padding: 10px;">
+                                         <a href="${item.clip.download_url}" target="_blank" style="display:block; text-align:center; padding:8px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD SCENE</a>
+                                    </div>
                                 </div>
                             ` : '<p style="color:red; font-size:0.9rem;">No high quality clip found for this scene.</p>'}
                         </div>
