@@ -2,460 +2,615 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>StockClip AI Pro</title>
-    <link rel="manifest" href="/manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockClip AI Pro - Official API Documentation</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* ==========================================
+           1. CSS VARIABLES & THEMING
+           ========================================== */
         :root {
-            --bg: #0b0f19;
-            --surface: #161b32;
+            --bg: #050505;
+            --surface: #0f111a;
+            --surface-light: #1a1d2d;
             --primary: #4f46e5;
+            --primary-glow: rgba(79, 70, 229, 0.4);
             --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
             --text: #f8fafc;
             --text-dim: #94a3b8;
-            --safe-area-top: env(safe-area-inset-top);
+            --text-muted: #64748b;
+            --border: rgba(255, 255, 255, 0.08);
+            --code-bg: #09090b;
+            --sidebar-width: 280px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* ==========================================
+           2. GLOBAL RESET & BASE STYLES
+           ========================================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body { 
-            background: var(--bg); color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif;
-            margin: 0; overflow-x: hidden; min-height: 100vh;
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            line-height: 1.7; 
+            overflow-x: hidden;
+            display: flex;
         }
 
-        /* App Shell Header */
-        header {
-            padding: calc(15px + var(--safe-area-top)) 20px 15px;
-            background: rgba(22, 27, 50, 0.8);
-            backdrop-filter: blur(10px);
-            position: sticky; top: 0; z-index: 100;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+        a { color: var(--primary); text-decoration: none; transition: 0.2s; }
+        a:hover { color: #818cf8; text-decoration: underline; }
+        
+        h1, h2, h3, h4, h5 { color: #fff; margin-bottom: 15px; font-weight: 700; letter-spacing: -0.5px; }
+        h1 { font-size: 2.5rem; margin-top: 20px; }
+        h2 { font-size: 1.8rem; margin-top: 50px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        h3 { font-size: 1.3rem; margin-top: 30px; }
+        p { color: var(--text-dim); margin-bottom: 20px; font-size: 1rem; }
+        
+        hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+        /* ==========================================
+           3. SIDEBAR NAVIGATION
+           ========================================== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--surface);
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #818cf8, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-group { margin: 20px 0; }
+        .nav-group-title {
+            padding: 0 20px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 10px 20px;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            border-left: 3px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: var(--surface-light);
+            color: var(--text);
+            border-left-color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* ==========================================
+           4. MAIN CONTENT AREA
+           ========================================== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 50px 60px;
+            max-width: 1000px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .badge.post { background: rgba(79, 70, 229, 0.2); color: #818cf8; border: 1px solid rgba(79, 70, 229, 0.4); }
+        .badge.get { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge.info { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+
+        /* Alerts & Info Boxes */
+        .alert {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            border-left: 4px solid transparent;
+        }
+        .alert p { margin: 0; font-size: 0.95rem; }
+        .alert strong { color: white; display: block; margin-bottom: 5px; }
+        
+        .alert-warning { background: rgba(245, 158, 11, 0.1); border-left-color: var(--warning); }
+        .alert-warning .icon { color: var(--warning); }
+        
+        .alert-danger { background: rgba(239, 68, 68, 0.1); border-left-color: var(--danger); }
+        .alert-danger .icon { color: var(--danger); }
+
+        .alert-info { background: rgba(56, 189, 248, 0.1); border-left-color: #38bdf8; }
+        .alert-info .icon { color: #38bdf8; }
+
+        /* ==========================================
+           5. DATA TABLES
+           ========================================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: var(--surface);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        th, td {
+            text-align: left;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--surface-light);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        td { font-size: 0.95rem; color: var(--text); }
+        td code {
+            background: rgba(0,0,0,0.4);
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: #f472b6;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        .required { color: var(--danger); font-weight: bold; font-size: 0.8rem; margin-left: 5px; }
+
+        /* ==========================================
+           6. CODE BLOCKS & SYNTAX HIGHLIGHTING
+           ========================================== */
+        .code-block-wrapper {
+            background: var(--code-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+            overflow: hidden;
         }
         
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .menu-btn { background: transparent; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center; }
-        .logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(45deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* Side Drawer (Hamburger Menu) */
-        .drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 400;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        .code-header {
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .drawer-overlay.active { opacity: 1; pointer-events: auto; }
         
-        .side-drawer {
-            position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
-            background: var(--surface); z-index: 500; transition: left 0.3s ease;
-            border-right: 1px solid rgba(255,255,255,0.05); box-shadow: 5px 0 20px rgba(0,0,0,0.6);
-            display: flex; flex-direction: column;
+        .code-tabs { display: flex; gap: 15px; }
+        .code-tab {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 600;
         }
-        .side-drawer.active { left: 0; }
+        .code-tab.active { color: var(--accent); }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .copy-btn:hover { color: white; }
+
+        pre {
+            padding: 20px;
+            overflow-x: auto;
+            font-family: 'Fira Code', Consolas, monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+        }
         
-        .drawer-header {
-            padding: calc(20px + var(--safe-area-top)) 20px 20px; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .drawer-header h3 { margin: 0; font-size: 1.1rem; color: var(--text); letter-spacing: 1px; }
-        
-        .drawer-links { padding: 20px 0; display: flex; flex-direction: column; }
-        .drawer-link {
-            padding: 15px 25px; display: flex; align-items: center; gap: 15px; background: transparent; border: none;
-            color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer; text-align: left; font-size: 1rem;
-        }
-        .drawer-link:hover { background: rgba(255,255,255,0.05); color: var(--text); border-left: 3px solid var(--primary); }
+        /* Syntax Colors */
+        .key { color: #818cf8; }
+        .str { color: #34d399; }
+        .num { color: #f472b6; }
+        .bool { color: #fbbf24; }
+        .comment { color: var(--text-muted); font-style: italic; }
 
-        /* Navigation Tabs */
-        .nav-tabs {
-            display: flex; background: var(--surface); margin: 20px; border-radius: 12px; padding: 5px; gap: 5px;
+        /* Responsive */
+        @media (max-width: 1000px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 30px 20px; }
         }
-        .tab-btn {
-            flex: 1; border: none; background: transparent; color: var(--text-dim); padding: 12px;
-            border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .tab-btn.active { background: var(--primary); color: white; }
-
-        /* Search Section */
-        .content-wrap { padding: 0 20px 100px; }
-        .glass-card { background: var(--surface); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        
-        .input-group { margin-bottom: 20px; }
-        label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
-        
-        input, textarea, select {
-            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 15px; color: white; font-size: 1rem; outline: none; transition: 0.3s;
-        }
-        input:focus, textarea:focus { border-color: var(--primary); }
-        textarea { height: 120px; }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-        .btn-main, .btn-outline {
-            width: 100%; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px; border: none;
-        }
-        .btn-main { background: var(--primary); color: white; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); }
-        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; }
-        .btn-outline:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444; }
-
-        /* API Key Modal */
-        .api-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
-            background: var(--surface); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px;
-            z-index: 600; border: 1px solid rgba(255,255,255,0.1); opacity: 0; pointer-events: none;
-            transition: all 0.3s ease; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-        }
-        .api-modal.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
-        .api-modal h3 { margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px; }
-        .api-modal p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
-
-        /* Results Area */
-        #resultsOverlay {
-            position: fixed; inset: 0; background: var(--bg); z-index: 200;
-            display: none; flex-direction: column;
-        }
-        .overlay-header { padding: calc(15px + var(--safe-area-top)) 20px 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .results-scroll { flex: 1; overflow-y: auto; padding: 20px; }
-
-        /* Video Card */
-        .video-card { background: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 20px; }
-        .video-thumb { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
-        
-        .card-info { padding: 15px; }
-        .ai-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
-        .tag-chip { color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
-
-        /* Progress Modal */
-        .loader-wrap {
-            position: fixed; inset: 0; background: rgba(11, 15, 25, 0.9); z-index: 300;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 40px;
-        }
-        .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="header-left">
-            <button class="menu-btn" onclick="openDrawer()"><i data-lucide="menu"></i></button>
-            <div class="logo">STOCKCLIP AI</div>
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i data-lucide="cpu"></i> StockClip Engine</div>
+            <p style="margin:5px 0 0; font-size:0.8rem; color:var(--text-muted);">API Documentation V16.2</p>
         </div>
-        <div id="statusDot" style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent);"></div>
-    </header>
+        
+        <div class="nav-group">
+            <div class="nav-group-title">Getting Started</div>
+            <a href="#intro" class="nav-link active">Introduction</a>
+            <a href="#architecture" class="nav-link">Architecture & Engine</a>
+            <a href="#auth" class="nav-link">Authentication</a>
+        </div>
 
-    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
-    <div class="side-drawer" id="sideDrawer">
-        <div class="drawer-header">
-            <h3>SETTINGS</h3>
-            <button class="menu-btn" onclick="closeDrawer()"><i data-lucide="x"></i></button>
+        <div class="nav-group">
+            <div class="nav-group-title">API Endpoints</div>
+            <a href="#api-search" class="nav-link">Search Video <span class="badge post">POST</span></a>
+            <a href="#api-timeline" class="nav-link">Timeline Generator <span class="badge post">POST</span></a>
+            <a href="#api-status" class="nav-link">Check Status <span class="badge get">GET</span></a>
         </div>
-        <div class="drawer-links">
-            <a href="/docs" class="drawer-link"><i data-lucide="book-open"></i> API Docs</a>
-            <button class="drawer-link" onclick="openApiModal()"><i data-lucide="key"></i> API Keys</button>
-            <a href="#" class="drawer-link"><i data-lucide="shield-check"></i> System Status</a>
+        
+        <div class="nav-group">
+            <div class="nav-group-title">Schemas</div>
+            <a href="#schema-clip" class="nav-link">Clip Object</a>
+            <a href="#errors" class="nav-link">Error Codes</a>
         </div>
-    </div>
+        
+        <div style="margin-top: auto; padding: 20px;">
+            <a href="/" style="display:block; text-align:center; background:var(--surface-light); padding:10px; border-radius:8px; border:1px solid var(--border); font-size:0.9rem;"><i data-lucide="arrow-left" style="width:16px; vertical-align:middle;"></i> Back to UI</a>
+        </div>
+    </nav>
 
-    <div class="drawer-overlay" id="apiModalOverlay" onclick="closeApiModal()" style="z-index: 550;"></div>
-    <div class="api-modal" id="apiModal">
-        <h3><i data-lucide="lock"></i> Security</h3>
-        <p>Enter your Frontend Secret API Key. It will be stored securely on this device's local storage.</p>
-        <div class="input-group">
-            <input type="password" id="userApiKeyInput" placeholder="Enter your Secret Key...">
-        </div>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-outline" style="padding: 12px;" onclick="clearApiKey()"><i data-lucide="trash-2"></i> Clear</button>
-            <button class="btn-main" style="padding: 12px; box-shadow: none;" onclick="saveApiKey()"><i data-lucide="save"></i> Save Key</button>
-        </div>
-    </div>
-
-    <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchMode('search')"><i data-lucide="search"></i> Clips</button>
-        <button class="tab-btn" onclick="switchMode('timeline')"><i data-lucide="clapperboard"></i> Script</button>
-    </div>
-
-    <div class="content-wrap">
-        <div class="glass-card">
-            <div id="searchView">
-                <div class="input-group">
-                    <label>What scene do you need?</label>
-                    <input type="text" id="queryInput" placeholder="e.g. Man hiking in mountains 4k">
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        
+        <section id="intro">
+            <h1>StockClip AI Pro REST API</h1>
+            <p>Welcome to the official documentation for the StockClip AI Video Engine (V16.2). This backend microservice provides an asynchronous, highly optimized pipeline to fetch, analyze, and rank stock footage from platforms like Pexels and Pixabay using deep learning models.</p>
+            
+            <div class="alert alert-info">
+                <i data-lucide="info" class="icon"></i>
+                <div>
+                    <strong>Asynchronous Architecture</strong>
+                    <p>This API does not return videos immediately in the POST requests. Because the AI performs heavy operations (LLM query expansion, FAISS semantic matching, and CLIP visual scoring), the API returns a <code>task_id</code>. You must use the GET endpoint to poll for the final results.</p>
                 </div>
             </div>
+        </section>
 
-            <div id="timelineView" style="display: none;">
-                <div class="input-group">
-                    <label>Paste your full script</label>
-                    <textarea id="scriptInput" placeholder="The AI will analyze each sentence and find the perfect clips..."></textarea>
+        <section id="architecture">
+            <h2>Engine Architecture (V16.2)</h2>
+            <p>To integrate perfectly with this API, it is important to understand what happens under the hood when you submit a request.</p>
+            <ul>
+                <li style="margin-bottom:10px; color:var(--text-dim);"><strong style="color:white;">Query Expansion:</strong> The engine uses a 70B LLM (via Groq) to break your prompt into 6 cinematic variations.</li>
+                <li style="margin-bottom:10px; color:var(--text-dim);"><strong style="color:white;">Early Deduplication:</strong> Identical videos from Pexels and Pixabay are stripped immediately to save RAM and CPU cycles.</li>
+                <li style="margin-bottom:10px; color:var(--text-dim);"><strong style="color:white;">FAISS Semantic Mapping:</strong> <code>paraphrase-multilingual-MiniLM-L12-v2</code> compares video tags with your core intent.</li>
+                <li style="margin-bottom:10px; color:var(--text-dim);"><strong style="color:white;">CLIP Vision Scoring:</strong> <code>clip-ViT-L-14</code> analyzes the actual video frames (thumbnails) to give a visual match percentage.</li>
+                <li style="margin-bottom:10px; color:var(--text-dim);"><strong style="color:white;">SQLite Zero-RAM Caching:</strong> All successful searches are cached on disk for 48 hours. Repeated queries return instantly in 0.1s without hitting the AI.</li>
+            </ul>
+        </section>
+
+        <section id="auth">
+            <h2>Authentication</h2>
+            <p>The backend proxy is secured using a static API key. You must include this key in the header of every request.</p>
+            
+            <div class="alert alert-danger">
+                <i data-lucide="shield-alert" class="icon"></i>
+                <div>
+                    <strong>Security Requirement</strong>
+                    <p>Header: <code>x-api-key</code>. If missing or incorrect, the server will return a strict <code>403 Forbidden</code> response. Do not expose this key in public client-side code without a proxy.</p>
                 </div>
             </div>
+            
+            <p><strong>Base URL:</strong> The API endpoints should be prefixed with your current host. <br>
+            <code style="background:var(--code-bg); padding:6px 12px; border-radius:6px; font-family:monospace; color:var(--accent); border:1px solid var(--border);"><span class="dynamic-url"></span>/api/...</code></p>
+        </section>
 
-            <div class="grid-2">
-                <div class="input-group">
-                    <label>Orientation</label>
-                    <select id="orientation">
-                        <option value="landscape">Landscape</option>
-                        <option value="portrait">Portrait</option>
-                    </select>
+        <hr>
+
+        <!-- API: SEARCH -->
+        <section id="api-search">
+            <h2>Search Single Video <span class="badge post">POST</span></h2>
+            <p><code style="color:#a5b4fc; font-family:monospace; font-size:1.1rem;"><span class="dynamic-url"></span>/api/search</code></p>
+            <p>Submits a visual scene description. The backend spawns a background thread in the <code>ThreadPoolExecutor</code> to process the request safely without blocking the server.</p>
+
+            <h3>Request Body (JSON)</h3>
+            <table>
+                <thead>
+                    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>query</code> <span class="required">*</span></td>
+                        <td>String</td>
+                        <td>The exact visual scene description (e.g., "Cinematic dark forest rain").</td>
+                    </tr>
+                    <tr>
+                        <td><code>orientation</code></td>
+                        <td>String</td>
+                        <td>Values: <code>landscape</code> (default), or <code>portrait</code>. Strict aspect ratio filtering is applied.</td>
+                    </tr>
+                    <tr>
+                        <td><code>quality</code></td>
+                        <td>String</td>
+                        <td>Values: <code>1080</code> (default), <code>4k</code> (filters out height < 2160), or <code>any</code>.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Example Request</h3>
+            <div class="code-block-wrapper">
+                <div class="code-header">
+                    <div class="code-tabs">
+                        <span class="code-tab active">cURL</span>
+                    </div>
+                    <button class="copy-btn" onclick="copyPre(this)"><i data-lucide="copy" style="width:16px;"></i></button>
                 </div>
-                <div class="input-group">
-                    <label>Quality</label>
-                    <select id="quality">
-                        <option value="1080">1080p+</option>
-                        <option value="4k">4K Only</option>
-                        <option value="any">Any</option>
-                    </select>
-                </div>
+<pre><code>curl -X POST <span class="dynamic-url"></span>/api/search \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -H <span class="str">"x-api-key: YOUR_SECRET_KEY"</span> \
+  -d <span class="str">'{
+    "query": "A lone astronaut walking on Mars",
+    "orientation": "landscape",
+    "quality": "4k"
+  }'</span></code></pre>
             </div>
 
-            <button class="btn-main" onclick="startAI()"><i data-lucide="cpu"></i> RUN INTELLIGENCE</button>
-        </div>
-    </div>
+            <h3>Response (202 Accepted)</h3>
+            <p>You will receive a unique <code>task_id</code>. Save this to poll for status.</p>
+            <div class="code-block-wrapper">
+<pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"task_id"</span>: <span class="str">"a1b2c3d4-5678-90ab-cdef-1234567890ab"</span>
+}</code></pre>
+            </div>
+        </section>
 
-    <div id="resultsOverlay">
-        <div class="overlay-header">
-            <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
-            <span style="font-weight: bold; font-size: 1.1rem;" id="resultTitle">Results</span>
-        </div>
-        <div class="results-scroll" id="resultsArea"></div>
-    </div>
+        <hr>
 
-    <div class="loader-wrap" id="loader">
-        <div class="spinner"></div>
-        <p id="loaderText" style="margin-top: 20px; font-weight: 600; color: var(--accent);"></p>
-    </div>
+        <!-- API: TIMELINE -->
+        <section id="api-timeline">
+            <h2>Generate Video Timeline <span class="badge post">POST</span></h2>
+            <p><code style="color:#a5b4fc; font-family:monospace; font-size:1.1rem;"><span class="dynamic-url"></span>/api/timeline</code></p>
+            <p>This powerful endpoint takes a full paragraph/script, splits it into logical sentences (up to 6 scenes), removes stop-words, finds core subjects using NLP, and runs parallel searches for each scene.</p>
+
+            <h3>Request Body (JSON)</h3>
+            <table>
+                <thead>
+                    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>script</code> <span class="required">*</span></td>
+                        <td>String</td>
+                        <td>Your full video script. (e.g., "Space is endless. Stars die and form black holes. Galaxies collide.")</td>
+                    </tr>
+                    <tr>
+                        <td><code>orientation</code></td>
+                        <td>String</td>
+                        <td>Values: <code>landscape</code> (default) or <code>portrait</code>.</td>
+                    </tr>
+                    <tr>
+                        <td><code>quality</code></td>
+                        <td>String</td>
+                        <td>Values: <code>1080</code> (default) or <code>4k</code>.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Example Request</h3>
+            <div class="code-block-wrapper">
+                <div class="code-header">
+                    <div class="code-tabs"><span class="code-tab active">JavaScript (Fetch)</span></div>
+                    <button class="copy-btn" onclick="copyPre(this)"><i data-lucide="copy" style="width:16px;"></i></button>
+                </div>
+<pre><code><span class="key">const</span> response = <span class="key">await</span> fetch(<span class="str">'<span class="dynamic-url"></span>/api/timeline'</span>, {
+  method: <span class="str">'POST'</span>,
+  headers: {
+    <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>,
+    <span class="str">'x-api-key'</span>: <span class="str">'YOUR_SECRET_KEY'</span>
+  },
+  body: JSON.stringify({
+    script: <span class="str">"The Roman Empire was vast. Gladiators fought in the colosseum."</span>,
+    orientation: <span class="str">"portrait"</span>
+  })
+});
+<span class="key">const</span> data = <span class="key">await</span> response.json();
+console.log(data.task_id);</code></pre>
+            </div>
+        </section>
+
+        <hr>
+
+        <!-- API: STATUS -->
+        <section id="api-status">
+            <h2>Check Task Status <span class="badge get">GET</span></h2>
+            <p><code style="color:#a5b4fc; font-family:monospace; font-size:1.1rem;"><span class="dynamic-url"></span>/api/status/{task_id}</code></p>
+            <p>Used to fetch the results of your Search or Timeline task. <strong style="color:var(--warning);">Best Practice:</strong> Poll this endpoint every 3 seconds. Tasks remain in memory for 30 minutes before garbage collection.</p>
+
+            <h3>Path Parameters</h3>
+            <table>
+                <tbody>
+                    <tr>
+                        <td><code>task_id</code> <span class="required">*</span></td>
+                        <td>String (UUID)</td>
+                        <td>The ID returned by the POST request.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Responses</h3>
+            <p><strong>1. Processing State (200 OK)</strong></p>
+            <div class="code-block-wrapper">
+<pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"task"</span>: {
+    <span class="key">"status"</span>: <span class="str">"processing"</span>,
+    <span class="key">"created_at"</span>: <span class="num">1718293010.12</span>
+  }
+}</code></pre>
+            </div>
+
+            <p><strong>2. Completed State (200 OK) - Search Results</strong></p>
+            <div class="code-block-wrapper">
+<pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"task"</span>: {
+    <span class="key">"status"</span>: <span class="str">"completed"</span>,
+    <span class="key">"count"</span>: <span class="num">12</span>,
+    <span class="key">"completed_at"</span>: <span class="num">1718293025.55</span>,
+    <span class="key">"data"</span>: [
+      {
+        <span class="key">"id"</span>: <span class="str">"pex_456789"</span>,
+        <span class="key">"source"</span>: <span class="str">"Pexels"</span>,
+        <span class="key">"url"</span>: <span class="str">"https://www.pexels.com/video/..."</span>,
+        <span class="key">"download_url"</span>: <span class="str">"https://player.vimeo.com/external/..."</span>,
+        <span class="key">"thumbnail"</span>: <span class="str">"https://images.pexels.com/..."</span>,
+        <span class="key">"width"</span>: <span class="num">3840</span>,
+        <span class="key">"height"</span>: <span class="num">2160</span>,
+        <span class="key">"duration"</span>: <span class="num">12</span>,
+        <span class="key">"tags"</span>: <span class="str">"space mars astronaut"</span>,
+        <span class="key">"query_used"</span>: <span class="str">"lone astronaut (via Pexels)"</span>,
+        <span class="key">"visual_score"</span>: <span class="num">88.5</span>,
+        <span class="key">"quality_label"</span>: <span class="str">"4K | Pexels | Thumbnail: 88.5%"</span>,
+        <span class="key">"score"</span>: <span class="num">92</span>
+      }
+      <span class="comment">// ... up to 11 more clips</span>
+    ]
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="schema-clip">
+            <h2>Data Schemas</h2>
+            <h3>The Clip Object</h3>
+            <p>The Engine normalizes responses from both Pixabay and Pexels into a single, unified <code>Clip</code> object for the frontend.</p>
+            <table>
+                <thead>
+                    <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>id</code></td><td>String</td><td>Prefixed with <code>pex_</code> or <code>pix_</code> to ensure global uniqueness.</td></tr>
+                    <tr><td><code>download_url</code></td><td>String</td><td>Direct MP4 download link of the highest quality available.</td></tr>
+                    <tr><td><code>thumbnail</code></td><td>String</td><td>JPG/PNG poster image for the video.</td></tr>
+                    <tr><td><code>visual_score</code></td><td>Float</td><td>0-100 percentage. Calculated by CLIP-ViT matching frame pixels against the prompt text.</td></tr>
+                    <tr><td><code>score</code></td><td>Integer</td><td>Final merit score (Weighted: 50% semantic, 20% resolution, 20% engagement, 10% duration).</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="errors">
+            <h2>Error Codes & Handling</h2>
+            <table>
+                <thead>
+                    <tr><th>Status Code</th><th>Error Type</th><th>Solution</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>403</code></td>
+                        <td>Forbidden</td>
+                        <td>Your <code>x-api-key</code> header is missing or incorrect.</td>
+                    </tr>
+                    <tr>
+                        <td><code>400</code></td>
+                        <td>Bad Request</td>
+                        <td>JSON body is missing required parameters (e.g., missing <code>query</code>).</td>
+                    </tr>
+                    <tr>
+                        <td><code>404</code></td>
+                        <td>Not Found</td>
+                        <td>The <code>task_id</code> does not exist or has expired (exceeded 30 minutes TTL).</td>
+                    </tr>
+                    <tr>
+                        <td><code>504</code></td>
+                        <td>Gateway Timeout</td>
+                        <td>The backend HF Space is sleeping. The proxy caught a TimeoutException. Retrying usually wakes it up.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
 
     <script>
+        // Init Lucide Icons
         lucide.createIcons();
-        let currentMode = 'search';
 
-        // ==========================================
-        // 🔒 API KEY LOCAL STORAGE MANAGEMENT
-        // ==========================================
-        const API_KEY_STORAGE_NAME = "SCFAI_FRONTEND_KEY";
-
-        function getUserApiKey() {
-            return localStorage.getItem(API_KEY_STORAGE_NAME) || "";
-        }
-
-        function openApiModal() {
-            closeDrawer(); // Close drawer first
-            document.getElementById('userApiKeyInput').value = getUserApiKey();
-            document.getElementById('apiModalOverlay').classList.add('active');
-            document.getElementById('apiModal').classList.add('active');
-            history.pushState({view: 'apimodal'}, '');
-        }
-
-        function closeApiModal() {
-            document.getElementById('apiModalOverlay').classList.remove('active');
-            document.getElementById('apiModal').classList.remove('active');
-            if(history.state?.view === 'apimodal') history.back();
-        }
-
-        function saveApiKey() {
-            const key = document.getElementById('userApiKeyInput').value.trim();
-            if(key) {
-                localStorage.setItem(API_KEY_STORAGE_NAME, key);
-                alert("Key saved securely to your device!");
-                closeApiModal();
-            } else {
-                alert("Please enter a valid key!");
-            }
-        }
-
-        function clearApiKey() {
-            localStorage.removeItem(API_KEY_STORAGE_NAME);
-            document.getElementById('userApiKeyInput').value = "";
-            alert("Key deleted from this device!");
-        }
-
-        // ==========================================
-        // UI & VIEW MANAGEMENT
-        // ==========================================
-        function switchMode(m) {
-            currentMode = m;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(m)));
-            document.getElementById('searchView').style.display = m === 'search' ? 'block' : 'none';
-            document.getElementById('timelineView').style.display = m === 'timeline' ? 'block' : 'none';
-        }
-
-        function openDrawer() {
-            document.getElementById('sideDrawer').classList.add('active');
-            document.getElementById('drawerOverlay').classList.add('active');
-            history.pushState({view: 'drawer'}, '');
-        }
-
-        function closeDrawer() {
-            document.getElementById('sideDrawer').classList.remove('active');
-            document.getElementById('drawerOverlay').classList.remove('active');
-            if(history.state?.view === 'drawer') history.back();
-        }
-
-        function openResults() {
-            document.getElementById('resultsOverlay').style.display = 'flex';
-            history.pushState({view: 'results'}, '');
-        }
-
-        function closeResults() {
-            document.getElementById('resultsOverlay').style.display = 'none';
-            if(history.state?.view === 'results') history.back();
-        }
-
-        // Native back button handler for everything
-        window.onpopstate = (e) => {
-            document.getElementById('sideDrawer').classList.remove('active');
-            document.getElementById('drawerOverlay').classList.remove('active');
-            document.getElementById('apiModal').classList.remove('active');
-            document.getElementById('apiModalOverlay').classList.remove('active');
+        // 1. Dynamic URL Injection (Prevents Hardcoded Fake URLs)
+        document.addEventListener("DOMContentLoaded", () => {
+            const realBaseUrl = window.location.origin;
+            document.querySelectorAll('.dynamic-url').forEach(el => {
+                el.textContent = realBaseUrl;
+            });
             
-            if (!e.state || e.state.view !== 'results') {
-                document.getElementById('resultsOverlay').style.display = 'none';
-            }
-        };
-
-        // ==========================================
-        // AI TASK POLLING LOGIC
-        // ==========================================
-        const steps = ["Groq Brainstorming...", "FAISS Mapping...", "CLIP Vision Checking...", "Finalizing HD Clips..."];
-        
-        async function startAI() {
-        async function startAI() {
-            const userKey = getUserApiKey();
-            if(!userKey) {
-                alert("Please set your API Key in Settings first!");
-                openApiModal();
-                return;
-            }
-
-            const loader = document.getElementById('loader');
-            const loaderText = document.getElementById('loaderText');
-            loader.style.display = 'flex';
+            // Handle active state in sidebar based on scroll
+            const sections = document.querySelectorAll("section");
+            const navLinks = document.querySelectorAll(".sidebar .nav-link");
             
-            let sIdx = 0;
-            const timer = setInterval(() => {
-                loaderText.innerText = steps[sIdx % steps.length];
-                sIdx++;
-            }, 2000);
-
-            const payload = currentMode === 'search' 
-                ? { query: document.getElementById('queryInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value }
-                : { script: document.getElementById('scriptInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value };
-
-            const endpoint = currentMode === 'search' ? '/api/search' : '/api/timeline';
-
-            try {
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-API-Key': userKey },
-                    body: JSON.stringify(payload)
+            window.addEventListener("scroll", () => {
+                let current = "";
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (scrollY >= sectionTop - 100) {
+                        current = section.getAttribute("id");
+                    }
                 });
                 
-                const data = await res.json();
-                
-                // 🔥 FIX: FastAPI Error Handling 
-                if (res.ok && data.success) {
-                    pollStatus(data.task_id, timer, userKey);
-                } else {
-                    clearInterval(timer);
-                    loader.style.display = 'none';
-                    
-                    // FastAPI "detail" कीवर्ड में एरर भेजता है, और कस्टम बैकएंड "error" में
-                    const errorMsg = data.detail || data.error || "An unknown error occurred.";
-                    
-                    if (res.status === 403) {
-                        alert("Access Denied: Invalid API Key!");
-                    } else {
-                        alert(`Error: ${errorMsg}`);
+                navLinks.forEach(link => {
+                    link.classList.remove("active");
+                    if (link.getAttribute("href").includes(current)) {
+                        link.classList.add("active");
                     }
-                }
-            } catch (err) {
-                clearInterval(timer);
-                loader.style.display = 'none';
-                alert("Connection Failed. Make sure the backend is awake.");
-            }
-        }
+                });
+            });
+        });
 
-        async function pollStatus(tid, timer, userKey) {
-            const poll = setInterval(async () => {
-                try {
-                    const res = await fetch(`/api/status/${tid}`, {
-                        headers: { 'X-API-Key': userKey }
-                    });
-                    const data = await res.json();
-                    
-                    if (data.task.status === 'completed') {
-                        clearInterval(poll);
-                        clearInterval(timer);
-                        document.getElementById('loader').style.display = 'none';
-                        renderResults(data.task.data);
-                    } else if (data.task.status === 'error') {
-                        clearInterval(poll);
-                        clearInterval(timer);
-                        document.getElementById('loader').style.display = 'none';
-                        alert(data.task.error);
-                    }
-                } catch(err) {
-                    console.log("Polling...");
-                }
-            }, 3000);
-        }
-
-        function renderResults(data) {
-            const container = document.getElementById('resultsArea');
-            container.innerHTML = '';
+        // 2. Smooth Copy to Clipboard Functionality
+        function copyPre(button) {
+            const preElement = button.closest('.code-block-wrapper').querySelector('pre');
+            const text = preElement.innerText;
             
-            if (currentMode === 'search') {
-                data.forEach(clip => {
-                    container.innerHTML += `
-                        <div class="video-card">
-                            <div class="video-thumb">
-                                <!-- 🔥 FIX: Added 'controls' for mobile touch support -->
-                                <video src="${clip.download_url}" poster="${clip.thumbnail}" muted loop controls playsinline onmouseover="this.play()" onmouseout="this.pause()"></video>
-                                <span class="badge">${clip.quality_label}</span>
-                            </div>
-                            <div class="card-info">
-                                <div class="ai-meta">
-                                    <span><span class="tag-chip">CLIP Vision: ${clip.visual_score}%</span></span>
-                                    <span>🔍 ${clip.query_used}</span>
-                                </div>
-                                <div style="display:flex; gap:10px; margin-top:12px;">
-                                    <a href="${clip.download_url}" target="_blank" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                data.forEach((item, idx) => {
-                    container.innerHTML += `
-                        <div style="margin-bottom:30px;">
-                            <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:10px;">Scene ${idx+1}: "${item.scene_text}"</p>
-                            ${item.clip ? `
-                                <div class="video-card">
-                                    <div class="video-thumb">
-                                        <!-- 🔥 FIX: Added 'controls' here too -->
-                                        <video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop controls playsinline onmouseover="this.play()"></video>
-                                    </div>
-                                    <div class="card-info" style="padding: 10px;">
-                                         <a href="${item.clip.download_url}" target="_blank" style="display:block; text-align:center; padding:8px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD SCENE</a>
-                                    </div>
-                                </div>
-                            ` : '<p style="color:red; font-size:0.9rem;">No high quality clip found for this scene.</p>'}
-                        </div>
-                    `;
-                });
-            }
-            openResults();
-        }
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(err => console.log("SW Register Failed", err));
+            navigator.clipboard.writeText(text).then(() => {
+                const originalHtml = button.innerHTML;
+                button.innerHTML = '<i data-lucide="check" style="width:16px; color:var(--accent);"></i>';
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 2500);
+            }).catch(err => console.error("Copy failed:", err));
         }
     </script>
 </body>
