@@ -1,0 +1,143 @@
+#!/bin/bash
+
+while true; do
+    echo "================================================="
+    echo " 🚀 Git Multi-Remote Manager By Partner"
+    echo "================================================="
+    echo " 1. Add new Remote (URL)"
+    echo " 2. Pull (Fetch from cloud / Override local)"
+    echo " 3. Push (Send to cloud / Force Push)"
+    echo " 4. Exit"
+    echo "================================================="
+    read -p "Choose an option (1/2/3/4): " choice
+
+    # Detect current branch (default to main)
+    BRANCH=$(git branch --show-current)
+    if [ -z "$BRANCH" ]; then
+        BRANCH="main"
+    fi
+
+    case $choice in
+        1)
+            echo ""
+            read -p "🔗 Paste Remote URL: " url
+            if [[ -z "$url" ]]; then
+                echo "❌ URL cannot be empty!"
+                echo ""
+                continue
+            fi
+
+            # Smart naming logic with duplicate checks
+            if [[ "$url" == *"huggingface.co"* ]]; then
+                if git remote | grep -q "^hf$"; then
+                    echo "⚠️ Remote named 'hf' already exists!"
+                    read -p "👉 Enter a new name for this Hugging Face remote (e.g., hf-2, hf-test): " remote_name
+                else
+                    remote_name="hf"
+                    echo "🤖 Hugging Face URL detected. Setting remote name to 'hf'..."
+                fi
+            elif [[ "$url" == *"github.com"* ]]; then
+                if git remote | grep -q "^origin$"; then
+                    echo "⚠️ Remote named 'origin' already exists!"
+                    read -p "👉 Enter a new name for this GitHub remote (e.g., origin-2, backup): " remote_name
+                else
+                    remote_name="origin"
+                    echo "🤖 GitHub URL detected. Setting remote name to 'origin'..."
+                fi
+            else
+                read -p "URL not recognized. Please enter a custom name for this remote (e.g., gitlab, server): " remote_name
+            fi
+
+            # Final check for custom name existence
+            if git remote | grep -q "^$remote_name$"; then
+                echo "❌ Error: Remote named '$remote_name' still exists! Please try again."
+            else
+                git remote add "$remote_name" "$url"
+                echo "✅ Remote '$remote_name' added successfully!"
+            fi
+            ;;
+            
+        2)
+            echo ""
+            echo "🌍 List of current Remotes:"
+            git remote -v
+            echo ""
+            read -p "Which Remote do you want to Pull/Override from? (e.g., origin or hf): " r_name
+            
+            if [[ -z "$r_name" ]]; then
+                echo "❌ Remote name is required!"
+                echo ""
+                continue
+            fi
+
+            read -p "⚠️ Do you want to Force Override? (This will delete local changes and sync exactly with remote) (y/n): " force_pull
+            
+            if [[ "$force_pull" == "y" || "$force_pull" == "Y" ]]; then
+                echo "🔄 Force Overriding... Fetching from $r_name/$BRANCH..."
+                git fetch "$r_name"
+                git reset --hard "$r_name/$BRANCH"
+                echo "✅ Force Override complete! Your local folder now matches the cloud."
+            else
+                echo "⬇️ Pulling from $r_name/$BRANCH..."
+                git pull "$r_name" "$BRANCH"
+                echo "✅ Pull complete!"
+            fi
+            ;;
+            
+        3)
+            echo ""
+            # Check for uncommitted changes
+            if [ -n "$(git status --porcelain)" ]; then
+                echo "⚠️ You have uncommitted changes."
+                read -p "Do you want to commit them before pushing? (y/n): " do_commit
+                
+                if [[ "$do_commit" == "y" || "$do_commit" == "Y" ]]; then
+                    read -p "📝 Enter commit message (leave blank for default): " commit_msg
+                    if [[ -z "$commit_msg" ]]; then
+                        commit_msg="Auto-commit: Updates applied before push"
+                    fi
+                    git add .
+                    git commit -m "$commit_msg"
+                    echo "✅ Files successfully committed!"
+                    echo ""
+                fi
+            else
+                echo "✅ Your code is already committed. Nothing new to commit."
+                echo ""
+            fi
+
+            echo "🌍 List of current Remotes:"
+            git remote -v
+            echo ""
+            read -p "Which Remote do you want to Push to? (e.g., origin or hf): " r_name
+            
+            if [[ -z "$r_name" ]]; then
+                echo "❌ Remote name is required!"
+                echo ""
+                continue
+            fi
+
+            read -p "⚠️ Do you want to Force Push? (This will overwrite cloud data with your local code) (y/n): " force_push
+            
+            if [[ "$force_push" == "y" || "$force_push" == "Y" ]]; then
+                echo "🚀 Force Pushing to $r_name/$BRANCH..."
+                git push -u -f "$r_name" "$BRANCH"
+                echo "✅ Force Push complete!"
+            else
+                echo "⬆️ Pushing to $r_name/$BRANCH..."
+                git push -u "$r_name" "$BRANCH"
+                echo "✅ Push complete!"
+            fi
+            ;;
+            
+        4|exit|Exit|EXIT)
+            echo "👋 Bye Partner! Happy Coding! 🚀"
+            break
+            ;;
+            
+        *)
+            echo "❌ Invalid option! Please press 1, 2, 3, or 4."
+            ;;
+    esac
+    echo ""
+done
