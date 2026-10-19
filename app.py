@@ -33,17 +33,17 @@ http_client: httpx.AsyncClient = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global http_client
-    
+
     # Startup Validation
     if not BACKEND_URL or "your-private-space" in BACKEND_URL:
         logger.warning("⚠️ BACKEND_URL is not properly configured. Proxy might fail!")
-    
+
     # Timeout 20s रखा है, क्योंकि HF Spaces को जागने (Cold start) में टाइम लगता है
     http_client = httpx.AsyncClient(timeout=20.0, limits=httpx.Limits(max_keepalive_connections=50))
     logger.info("✅ Global HTTPX Client Initialized")
-    
+
     yield  # यहाँ ऐप रन होती रहेगी
-    
+
     # Shutdown Cleanup
     await http_client.aclose()
     logger.info("🛑 Global HTTPX Client Closed")
@@ -71,20 +71,20 @@ async def forward_request(method: str, endpoint: str, payload: dict = None):
     headers = {"Content-Type": "application/json"}
     if HF_TOKEN:
         headers["Authorization"] = f"Bearer {HF_TOKEN}"
-        
+
     url = f"{BACKEND_URL}{endpoint}"
-    
+
     try:
         if method.upper() == "POST":
             res = await http_client.post(url, json=payload, headers=headers)
         else:
             res = await http_client.get(url, headers=headers)
-            
+
         if res.status_code in [200, 202]:
             return res.json()
-            
+
         raise HTTPException(status_code=res.status_code, detail=f"Backend Error: {res.text[:100]}")
-        
+
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Backend (HF Space) is sleeping. Please wake it up.")
     except HTTPException:
@@ -109,12 +109,17 @@ async def serve_sw():
     return FileResponse(os.path.join(BASE_DIR, "static/sw.js"), media_type="application/javascript")
 
 # ==========================================
-# 🚀 API Proxy Routes (अब एकदम क्लीन और छोटे हैं)
+# 🚀 API Proxy Routes (Videos + Real Images + Timeline)
 # ==========================================
 class SearchRequest(BaseModel):
     query: str
     orientation: str = "landscape"
     quality: str = "any"
+
+class ImageSearchRequest(BaseModel):
+    query: str
+    orientation: str = "all"  # Supports: "all", "landscape" (16:9), "portrait" (9:16), "square" (1:1)
+    page: int = 0
 
 class TimelineRequest(BaseModel):
     script: str
@@ -124,6 +129,11 @@ class TimelineRequest(BaseModel):
 @app.post("/api/search")
 async def proxy_search(request_data: SearchRequest, api_key: str = Depends(get_api_key)):
     return await forward_request("POST", "/api/search", request_data.model_dump())
+
+@app.post("/api/images")
+async def proxy_images(request_data: ImageSearchRequest, api_key: str = Depends(get_api_key)):
+    """🔥 NEW: Real Internet Image Search Proxy (Spark-PicSearch + CLIP)"""
+    return await forward_request("POST", "/api/images", request_data.model_dump())
 
 @app.post("/api/timeline")
 async def proxy_timeline(request_data: TimelineRequest, api_key: str = Depends(get_api_key)):
