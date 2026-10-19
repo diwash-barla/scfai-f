@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
+
     <meta name="theme-color" content="#0b0f19">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/favicon.ico">
-    
+
     <title>StockClip AI Pro</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -35,7 +35,7 @@
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        
+
         .header-left { display: flex; align-items: center; gap: 15px; }
         .menu-btn { background: transparent; border: none; color: var(--text); cursor: pointer; padding: 0; display: flex; align-items: center; }
         .logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(45deg, #818cf8, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -46,7 +46,7 @@
             opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(2px);
         }
         .drawer-overlay.active { opacity: 1; pointer-events: auto; }
-        
+
         .side-drawer {
             position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
             background: var(--surface); z-index: 500; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -54,13 +54,13 @@
             display: flex; flex-direction: column;
         }
         .side-drawer.active { transform: translateX(280px); }
-        
+
         .drawer-header {
             padding: calc(20px + var(--safe-area-top)) 20px 20px; display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
         .drawer-header h3 { margin: 0; font-size: 1.1rem; color: var(--text); letter-spacing: 1px; }
-        
+
         .drawer-links { padding: 15px; display: flex; flex-direction: column; gap: 5px; }
         .drawer-link {
             padding: 12px 15px; display: flex; align-items: center; gap: 15px; background: transparent; border: none;
@@ -75,14 +75,14 @@
             display: flex; align-items: center; justify-content: center; padding: 20px;
         }
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        
+
         .modal-box {
             background: var(--surface); padding: 25px; border-radius: 20px; width: 100%; max-width: 400px;
             border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5);
             transform: scale(0.95); transition: transform 0.3s ease;
         }
         .modal-overlay.active .modal-box { transform: scale(1); }
-        
+
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
         .modal-header h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1rem; }
 
@@ -97,37 +97,32 @@
         .docs-section { margin-bottom: 35px; }
         .docs-section h2 { font-size: 1.1rem; color: var(--accent); margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }
         .docs-section p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.7; margin: 0 0 10px; }
-        .docs-step { background: var(--surface); border-radius: 12px; padding: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05); display: flex; gap: 15px; align-items: flex-start; }
-        .step-num { background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0; }
-        .step-info h4 { margin: 0 0 5px; font-size: 0.95rem; }
-        .step-info p { margin: 0; font-size: 0.82rem; color: var(--text-dim); line-height: 1.5; }
-        .docs-badge { display: inline-block; background: rgba(79,70,229,0.2); color: #818cf8; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin: 5px 5px 0 0; border: 1px solid rgba(79,70,229,0.3); }
 
         /* NAV TABS */
         .nav-tabs {
             display: flex; background: var(--surface); margin: 20px; border-radius: 12px; padding: 5px; gap: 5px;
         }
         .tab-btn {
-            flex: 1; border: none; background: transparent; color: var(--text-dim); padding: 12px;
+            flex: 1; border: none; background: transparent; color: var(--text-dim); padding: 12px 8px;
             border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem;
         }
         .tab-btn.active { background: var(--primary); color: white; }
 
         /* CONTENT */
         .content-wrap { padding: 0 20px 100px; }
         .glass-card { background: var(--surface); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        
+
         .input-group { margin-bottom: 20px; }
         label { display: block; color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
-        
+
         input, textarea, select {
             width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px; padding: 15px; color: white; font-size: 1rem; outline: none; transition: 0.3s;
         }
-        input:focus, textarea:focus { border-color: var(--primary); }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); }
         textarea { height: 120px; resize: vertical; }
-        
+
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
         .btn-main, .btn-outline {
@@ -148,16 +143,19 @@
             position: fixed; inset: 0; background: var(--bg); z-index: 200;
             display: none; flex-direction: column;
         }
-        .overlay-header { padding: calc(15px + var(--safe-area-top)) 20px 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .overlay-header { padding: calc(15px + var(--safe-area-top)) 20px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .overlay-header-left { display: flex; align-items: center; gap: 15px; }
         .results-scroll { flex: 1; overflow-y: auto; padding: 20px; }
 
         .video-card { background: var(--surface); border-radius: 16px; overflow: hidden; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        .video-thumb { position: relative; width: 100%; background: #000; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
+        .video-thumb { position: relative; width: 100%; background: #000; overflow: hidden; }
+        video, .result-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .result-img { object-fit: contain; background: #070a12; max-height: 420px; }
+        .badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.65); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px); }
+        .badge-right { position: absolute; top: 10px; right: 10px; background: rgba(79, 70, 229, 0.85); padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
         .card-info { padding: 15px; }
-        .ai-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 5px; }
-        .tag-chip { color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 2px 6px; border-radius: 4px; }
+        .ai-meta { font-size: 0.75rem; color: var(--text-dim); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+        .tag-chip { color: var(--accent); background: rgba(16, 185, 129, 0.1); padding: 3px 8px; border-radius: 4px; font-weight: 600; }
 
         /* LOADER */
         .loader-wrap {
@@ -201,13 +199,13 @@
                 <h3><i data-lucide="lock" style="width:18px;height:18px;"></i> API Security</h3>
                 <button class="menu-btn" onclick="closeApiModal()"><i data-lucide="x"></i></button>
             </div>
-            
+
             <div class="input-group">
                 <label>Your Frontend Key</label>
                 <input type="password" id="userApiKeyInput" placeholder="Enter your Secret Key...">
                 <p id="saveStatus" class="status-msg"></p>
             </div>
-            
+
             <div style="display:flex; gap:10px; margin-top: 20px;">
                 <button class="btn-outline" style="padding: 12px; color: var(--text-dim);" onclick="clearApiKey()">Delete</button>
                 <button class="btn-main" style="padding: 12px;" onclick="saveApiKey()">Save Key</button>
@@ -215,125 +213,76 @@
         </div>
     </div>
 
-<div id="docsPage">  
+    <div id="docsPage">  
         <div class="docs-header">  
             <button class="menu-btn" onclick="closeDocs()"><i data-lucide="chevron-left"></i></button>  
             <span style="font-weight: bold; font-size: 1.1rem;">API Specification</span>  
         </div>  
         <div class="docs-content">  
-  
+
             <div class="docs-section">  
-                <h2><i data-lucide="server" style="width:18px;height:18px;"></i> StockClip AI Engine</h2>  
-                <p>Welcome to the StockClip AI Video Retrieval Platform. This API leverages an Asynchronous Pipeline integrating Groq LLM expansion, FAISS semantic ranking, and CLIP Vision verification.</p>  
-                <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--accent); padding: 10px 15px; border-radius: 4px; margin-top: 15px;">  
-                    <span style="color: var(--accent); font-weight: bold; font-size: 0.85rem;">PRODUCTION BASE URL</span><br>  
-                    <code style="color: #fff; font-size: 0.9rem;" class="dynamic-base-url">https://api.stockclip.ai</code>  
-                </div>  
+                <h2><i data-lucide="server" style="width:18px;height:18px;"></i> StockClip AI Engine V16.4</h2>  
+                <p>Welcome to the StockClip AI Video & Real Image Retrieval Platform. This API leverages an Asynchronous Pipeline integrating Groq LLM expansion, FAISS semantic ranking, SparkPicSearch, and CLIP-ViT-L-14 Vision verification.</p>  
             </div>  
-  
-            <div class="docs-section">  
-                <h2><i data-lucide="shield-alert" style="width:18px;height:18px;"></i> Security & Rate Limits</h2>  
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">  
-                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
-                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Auth Scope</span><br>  
-                        <span style="font-size: 0.9rem; font-weight: bold; color: #818cf8;">Frontend/Client Only</span>  
-                    </div>  
-                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
-                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Timeout / Expiry</span><br>  
-                        <span style="font-size: 0.9rem; font-weight: bold; color: #facc15;">Task TTL: 180s</span>  
-                    </div>  
-                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
-                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Max Concurrency</span><br>  
-                        <span style="font-size: 0.9rem; font-weight: bold; color: #f472b6;">5 Requests / sec</span>  
-                    </div>  
-                    <div style="background: var(--surface); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">  
-                        <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Polling Limit</span><br>  
-                        <span style="font-size: 0.9rem; font-weight: bold; color: #34d399;">Min Interval: 3s</span>  
-                    </div>  
-                </div>  
-                <p style="font-size: 0.85rem; color: var(--text-dim);"><strong>Header Requirement:</strong> Pass your per-user key via <code>X-API-Key</code>. Exceeding limits will return a <code>429 Too Many Requests</code>.</p>  
-            </div>  
-  
-            <div class="docs-section">  
-                <h2><i data-lucide="git-merge" style="width:18px;height:18px;"></i> Task Lifecycle Pipeline</h2>  
-                <p>AI processing follows a strict state machine. Monitor the <code>status</code> field during polling.</p>  
-                <div style="background: var(--surface); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); font-family: monospace; font-size: 0.8rem; line-height: 2;">  
-                    <span style="color: #94a3b8;">[1]</span> <strong style="color: #60a5fa;">queued</strong> <span style="color: var(--text-dim);">→ Task accepted, awaiting worker.</span><br>  
-                    <span style="color: #94a3b8;">[2]</span> <strong style="color: #c084fc;">processing</strong> <span style="color: var(--text-dim);">→ Groq generating search queries.</span><br>  
-                    <span style="color: #94a3b8;">[3]</span> <strong style="color: #facc15;">fetching</strong> <span style="color: var(--text-dim);">→ Gathering stock clips from providers.</span><br>  
-                    <span style="color: #94a3b8;">[4]</span> <strong style="color: #fb923c;">ranking</strong> <span style="color: var(--text-dim);">→ FAISS semantic matching running.</span><br>  
-                    <span style="color: #94a3b8;">[5]</span> <strong style="color: #34d399;">vision</strong> <span style="color: var(--text-dim);">→ CLIP model verifying frame accuracy.</span><br>  
-                    <span style="color: #94a3b8;">[6]</span> <strong style="color: var(--accent);">completed</strong> <span style="color: var(--text-dim);">→ Task done. Data payload attached.</span>  
-                </div>  
-            </div>  
-  
+
             <div class="docs-section">  
                 <h2><i data-lucide="code" style="width:18px;height:18px;"></i> Endpoints & Integration</h2>  
-                  
-                <h4 style="margin: 15px 0 5px; color: var(--text);">1. Init Job</h4>  
+
+                <h4 style="margin: 15px 0 5px; color: var(--text);">1. Stock Video Search</h4>  
                 <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">POST /api/search</code>  
-                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>// Request Payload  
-{  
+                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>{  
   "query": "Cyberpunk city glowing neon rain",  
   "orientation": "landscape", // "landscape" | "portrait"  
-  "quality": "4k" // "1080" | "4k" | "any"  
-}  
-  
-// Response (202 Accepted)  
-{ "success": true, "task_id": "550e8400..." }</code></pre>  
-  
-                <h4 style="margin: 25px 0 5px; color: var(--text);">2. Poll Results & Data Contract</h4>  
-                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">GET /api/status/{task_id}</code>  
-                <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 10px;"><strong>Note on Partial Results:</strong> Currently, the API does not stream partial data. Wait for the <code>completed</code> status.</p>  
-                  
-                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #f8fafc; font-size: 0.8rem;"><code>// Response Schema (200 OK)  
-{  
-  "success": true,  
-  "task": {  
-    "status": "completed",  
-    "count": 5, // Max 5 clips returned per search  
-    "data": [  
-      {  
-        "clip_id": "px-123456",  
-        "download_url": "https://...",  
-        "quality_label": "4K",  
-        "aspect_ratio": "16:9",  
-        "visual_score": 92.5, // Range: 0.0 to 100.0 (CLIP Confidence)  
-        "query_used": "neon city rain",  
-        "description": "Aerial view of a futuristic city.",  
-        "tags": ["cyberpunk", "neon", "cityscape"]  
-      }  
-    ]  
-  }  
+  "quality": "1080"           // "1080" | "4k" | "any"  
 }</code></pre>  
+
+                <h4 style="margin: 25px 0 5px; color: var(--text);">2. Real Web Image Search (CLIP Ranked)</h4>  
+                <code style="background: rgba(16,185,129,0.2); color: #34d399; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">POST /api/images</code>  
+                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>{  
+  "query": "Ancient Kedarnath temple in snow",  
+  "orientation": "all", // "all" | "landscape" | "portrait" | "square"  
+  "page": 0             // 0, 1, 2... (10 CLIP-verified images per page)  
+}</code></pre>  
+
+                <h4 style="margin: 25px 0 5px; color: var(--text);">3. Video Script Timeline</h4>  
+                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">POST /api/timeline</code>  
+                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>{  
+  "script": "Full story or paragraph here...",  
+  "orientation": "landscape",  
+  "quality": "1080"  
+}</code></pre>  
+
+                <h4 style="margin: 25px 0 5px; color: var(--text);">4. Poll Task Results</h4>  
+                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">GET /api/status/{task_id}</code>  
             </div>  
-  
-            <div class="docs-section">  
-                <h2><i data-lucide="alert-triangle" style="width:18px;height:18px;"></i> Error & Retry Policy</h2>  
-                <ul style="color: var(--text-dim); font-size: 0.85rem; line-height: 1.8; margin-top: 10px;">  
-                    <li><strong style="color: #ef4444;">401 Unauthorized:</strong> Token missing/invalid. Do not retry.</li>  
-                    <li><strong style="color: #facc15;">404 Not Found:</strong> <code>task_id</code> expired (exceeded 180s TTL) or invalid.</li>  
-                    <li><strong style="color: #f87171;">504 Gateway Timeout:</strong> AI Backend cold boot. <span style="color: white; border-bottom: 1px dashed white;">Retry automatically 1 time</span> after a 5-second delay.</li>  
-                </ul>  
-            </div>  
-  
+
         </div>  
     </div>
 
+    <!-- 3 NAVIGATION TABS -->
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchMode('search')"><i data-lucide="search"></i> Clips</button>
-        <button class="tab-btn" onclick="switchMode('timeline')"><i data-lucide="clapperboard"></i> Script</button>
+        <button class="tab-btn active" data-mode="search" onclick="switchMode('search')">
+            <i data-lucide="video"></i> Clips
+        </button>
+        <button class="tab-btn" data-mode="images" onclick="switchMode('images')">
+            <i data-lucide="image"></i> Images
+        </button>
+        <button class="tab-btn" data-mode="timeline" onclick="switchMode('timeline')">
+            <i data-lucide="clapperboard"></i> Script
+        </button>
     </div>
 
     <div class="content-wrap">
         <div class="glass-card">
+            <!-- Shared Query Input for Clips & Images -->
             <div id="searchView">
                 <div class="input-group">
-                    <label>What scene do you need?</label>
+                    <label id="queryLabel">What scene do you need?</label>
                     <input type="text" id="queryInput" placeholder="e.g. Man hiking in mountains 4k">
                 </div>
             </div>
 
+            <!-- Script Input for Timeline -->
             <div id="timelineView" style="display: none;">
                 <div class="input-group">
                     <label>Paste your full script</label>
@@ -341,12 +290,13 @@
                 </div>
             </div>
 
-            <div class="grid-2">
+            <!-- Options for Clips & Script -->
+            <div class="grid-2" id="videoOptionsGrid">
                 <div class="input-group">
                     <label>Orientation</label>
                     <select id="orientation">
-                        <option value="landscape">Landscape</option>
-                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Landscape (16:9)</option>
+                        <option value="portrait">Portrait (9:16)</option>
                     </select>
                 </div>
                 <div class="input-group">
@@ -359,6 +309,28 @@
                 </div>
             </div>
 
+            <!-- Options for Real Images -->
+            <div class="grid-2" id="imageOptionsGrid" style="display: none;">
+                <div class="input-group">
+                    <label>Aspect Ratio</label>
+                    <select id="imgOrientation">
+                        <option value="all">All Ratios</option>
+                        <option value="landscape">Landscape (16:9)</option>
+                        <option value="portrait">Portrait (9:16)</option>
+                        <option value="square">Square (1:1)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Page Batch</label>
+                    <select id="imgPage">
+                        <option value="0">Page 1 (Top 10)</option>
+                        <option value="1">Page 2</option>
+                        <option value="2">Page 3</option>
+                        <option value="3">Page 4</option>
+                    </select>
+                </div>
+            </div>
+
             <button class="btn-main" onclick="startAI()"><i data-lucide="cpu"></i> RUN INTELLIGENCE</button>
             <p id="runErrorStatus" class="status-msg" style="text-align:center;"></p>
         </div>
@@ -366,8 +338,11 @@
 
     <div id="resultsOverlay">
         <div class="overlay-header">
-            <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
-            <span style="font-weight: bold; font-size: 1.1rem;">Results</span>
+            <div class="overlay-header-left">
+                <button onclick="closeResults()" class="menu-btn"><i data-lucide="chevron-left"></i></button>
+                <span style="font-weight: bold; font-size: 1.1rem;" id="resultsTitle">Results</span>
+            </div>
+            <span id="resultsCountBadge" style="font-size: 0.8rem; color: var(--accent); font-weight: 600;"></span>
         </div>
         <div class="results-scroll" id="resultsArea"></div>
     </div>
@@ -396,10 +371,10 @@
         }
 
         // ==========================================
-        // API KEY MODAL — FIXED
+        // API KEY MODAL
         // ==========================================
         function openApiModal() {
-            closeSidebar(); // पहले sidebar बंद करो
+            closeSidebar();
             document.getElementById('userApiKeyInput').value = localStorage.getItem(API_KEY_STORAGE_NAME) || "";
             const status = document.getElementById('saveStatus');
             status.className = "status-msg";
@@ -420,13 +395,13 @@
         function saveApiKey() {
             const key = document.getElementById('userApiKeyInput').value.trim();
             const status = document.getElementById('saveStatus');
-            
+
             if (key === '') {
                 status.innerText = "Please enter a valid key!";
                 status.className = "status-msg error";
                 return;
             }
-            
+
             localStorage.setItem(API_KEY_STORAGE_NAME, key);
             status.innerText = "API Key saved securely!";
             status.className = "status-msg success";
@@ -443,12 +418,12 @@
         }
 
         // ==========================================
-        // DOCS PAGE — FIXED (नया in-app page)
+        // DOCS PAGE
         // ==========================================
         function openDocs() {
             closeSidebar();
             document.getElementById('docsPage').classList.add('active');
-            lucide.createIcons(); // docs page icons refresh
+            lucide.createIcons();
         }
 
         function closeDocs() {
@@ -456,15 +431,42 @@
         }
 
         // ==========================================
-        // MODE SWITCH
+        // MODE SWITCH (Clips | Images | Script)
         // ==========================================
         function switchMode(m) {
             currentMode = m;
             document.querySelectorAll('.tab-btn').forEach(b => {
-                b.classList.toggle('active', b.innerText.toLowerCase().includes(m === 'search' ? 'clip' : 'script'));
+                b.classList.toggle('active', b.getAttribute('data-mode') === m);
             });
-            document.getElementById('searchView').style.display = m === 'search' ? 'block' : 'none';
-            document.getElementById('timelineView').style.display = m === 'timeline' ? 'block' : 'none';
+
+            const searchView = document.getElementById('searchView');
+            const timelineView = document.getElementById('timelineView');
+            const videoOptionsGrid = document.getElementById('videoOptionsGrid');
+            const imageOptionsGrid = document.getElementById('imageOptionsGrid');
+            const queryLabel = document.getElementById('queryLabel');
+            const queryInput = document.getElementById('queryInput');
+
+            if (m === 'search') {
+                searchView.style.display = 'block';
+                timelineView.style.display = 'none';
+                videoOptionsGrid.style.display = 'grid';
+                imageOptionsGrid.style.display = 'none';
+                queryLabel.innerText = "What video scene do you need?";
+                queryInput.placeholder = "e.g. Man hiking in mountains 4k";
+            } else if (m === 'images') {
+                searchView.style.display = 'block';
+                timelineView.style.display = 'none';
+                videoOptionsGrid.style.display = 'none';
+                imageOptionsGrid.style.display = 'grid';
+                queryLabel.innerText = "What real web image do you need?";
+                queryInput.placeholder = "e.g. Ancient temple in Himalayas snow";
+            } else if (m === 'timeline') {
+                searchView.style.display = 'none';
+                timelineView.style.display = 'block';
+                videoOptionsGrid.style.display = 'grid';
+                imageOptionsGrid.style.display = 'none';
+            }
+
             document.getElementById('runErrorStatus').className = "status-msg";
         }
 
@@ -472,14 +474,15 @@
         function closeResults() { document.getElementById('resultsOverlay').style.display = 'none'; }
 
         // ==========================================
-        // AI LOGIC
+        // AI LOGIC (Videos + Real Images + Timeline)
         // ==========================================
-        const steps = ["Groq Brainstorming...", "FAISS Mapping...", "CLIP Vision Checking...", "Finalizing HD Clips..."];
+        const videoSteps = ["Groq Brainstorming...", "FAISS Mapping...", "CLIP Vision Checking...", "Finalizing HD Clips..."];
+        const imageSteps = ["Searching Web Images...", "Streaming Proxy (>15KB)...", "CLIP-ViT-L-14 Scoring...", "Ranking Best Matches..."];
 
-        async function startAI() {
+        async function startAI(customPage = null) {
             const userKey = localStorage.getItem(API_KEY_STORAGE_NAME);
             const runStatus = document.getElementById('runErrorStatus');
-            
+
             if (!userKey) {
                 runStatus.innerText = "Please save your API Key in settings first!";
                 runStatus.className = "status-msg error";
@@ -487,21 +490,65 @@
                 return;
             }
 
+            // Input validation
+            if (currentMode === 'search' || currentMode === 'images') {
+                const qVal = document.getElementById('queryInput').value.trim();
+                if (!qVal) {
+                    runStatus.innerText = "Please enter a search query!";
+                    runStatus.className = "status-msg error";
+                    return;
+                }
+            } else if (currentMode === 'timeline') {
+                const sVal = document.getElementById('scriptInput').value.trim();
+                if (!sVal) {
+                    runStatus.innerText = "Please paste a script first!";
+                    runStatus.className = "status-msg error";
+                    return;
+                }
+            }
+
+            runStatus.className = "status-msg";
             const loader = document.getElementById('loader');
             const loaderText = document.getElementById('loaderText');
             loader.style.display = 'flex';
-            
+
+            const activeSteps = currentMode === 'images' ? imageSteps : videoSteps;
             let sIdx = 0;
+            loaderText.innerText = activeSteps[0];
             const timer = setInterval(() => {
-                loaderText.innerText = steps[sIdx % steps.length];
                 sIdx++;
+                loaderText.innerText = activeSteps[sIdx % activeSteps.length];
             }, 2000);
 
-            const payload = currentMode === 'search'
-                ? { query: document.getElementById('queryInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value }
-                : { script: document.getElementById('scriptInput').value, orientation: document.getElementById('orientation').value, quality: document.getElementById('quality').value };
+            let payload = {};
+            let endpoint = '';
 
-            const endpoint = currentMode === 'search' ? '/api/search' : '/api/timeline';
+            if (currentMode === 'search') {
+                endpoint = '/api/search';
+                payload = {
+                    query: document.getElementById('queryInput').value.trim(),
+                    orientation: document.getElementById('orientation').value,
+                    quality: document.getElementById('quality').value
+                };
+            } else if (currentMode === 'images') {
+                endpoint = '/api/images';
+                const pageSelect = document.getElementById('imgPage');
+                if (customPage !== null) {
+                    pageSelect.value = String(customPage);
+                }
+                payload = {
+                    query: document.getElementById('queryInput').value.trim(),
+                    orientation: document.getElementById('imgOrientation').value,
+                    page: parseInt(pageSelect.value || "0", 10)
+                };
+            } else {
+                endpoint = '/api/timeline';
+                payload = {
+                    script: document.getElementById('scriptInput').value.trim(),
+                    orientation: document.getElementById('orientation').value,
+                    quality: document.getElementById('quality').value
+                };
+            }
 
             try {
                 const res = await fetch(endpoint, {
@@ -510,13 +557,15 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                
-                if (data.success) {
+
+                if (res.ok && data.success) {
                     pollStatus(data.task_id, timer, userKey);
                 } else {
                     clearInterval(timer);
                     loader.style.display = 'none';
-                    runStatus.innerText = res.status === 401 ? "Unauthorized: Invalid API Key!" : data.error;
+                    runStatus.innerText = (res.status === 401 || res.status === 403)
+                        ? "Unauthorized: Invalid API Key!"
+                        : (data.detail || data.error || "Failed to start task.");
                     runStatus.className = "status-msg error";
                 }
             } catch (err) {
@@ -533,15 +582,23 @@
                 try {
                     const res = await fetch(`/api/status/${tid}`, { headers: { 'X-API-Key': userKey } });
                     const data = await res.json();
-                    
+
+                    if (!res.ok || !data.task) {
+                        clearInterval(poll); clearInterval(timer);
+                        document.getElementById('loader').style.display = 'none';
+                        runStatus.innerText = data.detail || data.error || "Task polling failed.";
+                        runStatus.className = "status-msg error";
+                        return;
+                    }
+
                     if (data.task.status === 'completed') {
                         clearInterval(poll); clearInterval(timer);
                         document.getElementById('loader').style.display = 'none';
-                        renderResults(data.task.data);
+                        renderResults(data.task.data || []);
                     } else if (data.task.status === 'error') {
                         clearInterval(poll); clearInterval(timer);
                         document.getElementById('loader').style.display = 'none';
-                        runStatus.innerText = data.task.error;
+                        runStatus.innerText = data.task.error || "Task failed.";
                         runStatus.className = "status-msg error";
                     }
                 } catch(err) { console.log("Polling..."); }
@@ -550,11 +607,23 @@
 
         function renderResults(data) {
             const container = document.getElementById('resultsArea');
+            const countBadge = document.getElementById('resultsCountBadge');
+            const resultsTitle = document.getElementById('resultsTitle');
             container.innerHTML = '';
-            const userOrientation = document.getElementById('orientation').value;
-            const aspectStyle = userOrientation === 'portrait' ? 'aspect-ratio: 9/16;' : 'aspect-ratio: 16/9;';
-            
+
+            countBadge.innerText = `${data.length} found`;
+
+            if (!data || data.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-dim); margin-top:40px;">No high-quality matches found. Try a different query or page.</p>`;
+                openResults();
+                return;
+            }
+
             if (currentMode === 'search') {
+                resultsTitle.innerText = "Video Clips";
+                const userOrientation = document.getElementById('orientation').value;
+                const aspectStyle = userOrientation === 'portrait' ? 'aspect-ratio: 9/16;' : 'aspect-ratio: 16/9;';
+
                 data.forEach(clip => {
                     container.innerHTML += `
                         <div class="video-card">
@@ -564,23 +633,72 @@
                             </div>
                             <div class="card-info">
                                 <div class="ai-meta">
-                                    <span><span class="tag-chip">CLIP Vision: ${clip.visual_score}%</span></span>
+                                    <span class="tag-chip">CLIP Vision: ${clip.visual_score}%</span>
                                     <span>🔍 ${clip.query_used}</span>
                                 </div>
                                 <div style="display:flex; gap:10px; margin-top:12px;">
-                                    <a href="${clip.download_url}" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
+                                    <a href="${clip.download_url}" target="_blank" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
                                 </div>
                             </div>
                         </div>`;
                 });
+            } else if (currentMode === 'images') {
+                resultsTitle.innerText = "Real Web Images";
+                data.forEach(img => {
+                    const imgUrl = img.proxy_url || img.download_url || img.url;
+                    const resolution = (img.width && img.height) ? `${img.width}×${img.height}` : 'HD';
+                    container.innerHTML += `
+                        <div class="video-card">
+                            <div class="video-thumb">
+                                <img class="result-img" src="${imgUrl}" alt="${img.query_used}" loading="lazy">
+                                <span class="badge">${img.quality_label}</span>
+                                <span class="badge-right">${resolution}</span>
+                            </div>
+                            <div class="card-info">
+                                <div class="ai-meta">
+                                    <span class="tag-chip">CLIP Vision: ${img.visual_score}% (Score: ${img.score})</span>
+                                    <span>🔍 ${img.query_used}</span>
+                                </div>
+                                <div style="display:flex; gap:10px; margin-top:12px;">
+                                    <a href="${img.download_url}" target="_blank" download style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD IMAGE</a>
+                                    <a href="${img.url}" target="_blank" style="padding:10px 14px; background:rgba(255,255,255,0.08); color:var(--text); border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">SOURCE</a>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+
+                // Next Page Quick Button for Images
+                const currentPage = parseInt(document.getElementById('imgPage').value || "0", 10);
+                if (currentPage < 3) {
+                    container.innerHTML += `
+                        <button class="btn-outline" style="margin-top: 10px; margin-bottom: 30px;" onclick="closeResults(); startAI(${currentPage + 1});">
+                            Load Page ${currentPage + 2} (Next 10 Images) →
+                        </button>`;
+                }
             } else {
+                resultsTitle.innerText = "Script Timeline";
+                const userOrientation = document.getElementById('orientation').value;
+                const aspectStyle = userOrientation === 'portrait' ? 'aspect-ratio: 9/16;' : 'aspect-ratio: 16/9;';
+
                 data.forEach((item, idx) => {
                     container.innerHTML += `
                         <div style="margin-bottom:30px;">
                             <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:10px;">Scene ${idx+1}: "${item.scene_text}"</p>
                             ${item.clip ? `
                                 <div class="video-card">
-                                    <div class="video-thumb" style="${aspectStyle}"><video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" playsinline></video></div>
+                                    <div class="video-thumb" style="${aspectStyle}">
+                                        <video src="${item.clip.download_url}" poster="${item.clip.thumbnail}" muted loop onmouseover="this.play()" onmouseout="this.pause()" playsinline></video>
+                                        <span class="badge">${item.clip.quality_label || 'HD'}</span>
+                                    </div>
+                                    <div class="card-info">
+                                        <div class="ai-meta">
+                                            <span class="tag-chip">CLIP Vision: ${item.clip.visual_score}%</span>
+                                            <span>🔍 ${item.clip.query_used}</span>
+                                        </div>
+                                        <div style="display:flex; gap:10px; margin-top:12px;">
+                                            <a href="${item.clip.download_url}" target="_blank" style="flex:1; text-align:center; padding:10px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:0.8rem; font-weight:bold;">DOWNLOAD</a>
+                                        </div>
+                                    </div>
                                 </div>` 
                             : '<p style="color:#ef4444; font-size:0.9rem;">No high quality clip found for this scene.</p>'}
                         </div>`;
