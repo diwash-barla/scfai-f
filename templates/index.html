@@ -86,18 +86,6 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
         .modal-header h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1rem; }
 
-        /* DOCS PAGE */
-        #docsPage {
-            position: fixed; inset: 0; background: var(--bg); z-index: 600;
-            display: none; flex-direction: column; overflow-y: auto;
-        }
-        #docsPage.active { display: flex; }
-        .docs-header { padding: calc(15px + var(--safe-area-top)) 20px 15px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); position: sticky; top: 0; background: rgba(11,15,25,0.9); backdrop-filter: blur(10px); z-index: 10; }
-        .docs-content { padding: 25px 20px 80px; max-width: 600px; margin: 0 auto; width: 100%; }
-        .docs-section { margin-bottom: 35px; }
-        .docs-section h2 { font-size: 1.1rem; color: var(--accent); margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }
-        .docs-section p { color: var(--text-dim); font-size: 0.9rem; line-height: 1.7; margin: 0 0 10px; }
-
         /* NAV TABS */
         .nav-tabs {
             display: flex; background: var(--surface); margin: 20px; border-radius: 12px; padding: 5px; gap: 5px;
@@ -187,9 +175,10 @@
             <button class="drawer-link" onclick="openApiModal()">
                 <i data-lucide="key"></i> API Settings
             </button>
-            <button class="drawer-link" onclick="openDocs()">
+            <!-- 🔥 अब यह सीधा /docs (templates/docs.html) पर ले जाएगा -->
+            <a href="/docs" class="drawer-link">
                 <i data-lucide="book-open"></i> Documentation
-            </button>
+            </a>
         </div>
     </div>
 
@@ -213,52 +202,6 @@
         </div>
     </div>
 
-    <div id="docsPage">  
-        <div class="docs-header">  
-            <button class="menu-btn" onclick="closeDocs()"><i data-lucide="chevron-left"></i></button>  
-            <span style="font-weight: bold; font-size: 1.1rem;">API Specification</span>  
-        </div>  
-        <div class="docs-content">  
-
-            <div class="docs-section">  
-                <h2><i data-lucide="server" style="width:18px;height:18px;"></i> StockClip AI Engine V16.4</h2>  
-                <p>Welcome to the StockClip AI Video & Real Image Retrieval Platform. This API leverages an Asynchronous Pipeline integrating Groq LLM expansion, FAISS semantic ranking, SparkPicSearch, and CLIP-ViT-L-14 Vision verification.</p>  
-            </div>  
-
-            <div class="docs-section">  
-                <h2><i data-lucide="code" style="width:18px;height:18px;"></i> Endpoints & Integration</h2>  
-
-                <h4 style="margin: 15px 0 5px; color: var(--text);">1. Stock Video Search</h4>  
-                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">POST /api/search</code>  
-                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>{  
-  "query": "Cyberpunk city glowing neon rain",  
-  "orientation": "landscape", // "landscape" | "portrait"  
-  "quality": "1080"           // "1080" | "4k" | "any"  
-}</code></pre>  
-
-                <h4 style="margin: 25px 0 5px; color: var(--text);">2. Real Web Image Search (CLIP Ranked)</h4>  
-                <code style="background: rgba(16,185,129,0.2); color: #34d399; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">POST /api/images</code>  
-                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>{  
-  "query": "Ancient Kedarnath temple in snow",  
-  "orientation": "all", // "all" | "landscape" | "portrait" | "square"  
-  "page": 0             // 0, 1, 2... (10 CLIP-verified images per page)  
-}</code></pre>  
-
-                <h4 style="margin: 25px 0 5px; color: var(--text);">3. Video Script Timeline</h4>  
-                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">POST /api/timeline</code>  
-                <pre style="background: #000; padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); overflow-x: auto; color: #34d399; font-size: 0.8rem;"><code>{  
-  "script": "Full story or paragraph here...",  
-  "orientation": "landscape",  
-  "quality": "1080"  
-}</code></pre>  
-
-                <h4 style="margin: 25px 0 5px; color: var(--text);">4. Poll Task Results</h4>  
-                <code style="background: rgba(79,70,229,0.2); color: #818cf8; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">GET /api/status/{task_id}</code>  
-            </div>  
-
-        </div>  
-    </div>
-
     <!-- 3 NAVIGATION TABS -->
     <div class="nav-tabs">
         <button class="tab-btn active" data-mode="search" onclick="switchMode('search')">
@@ -277,7 +220,7 @@
             <!-- Shared Query Input for Clips & Images -->
             <div id="searchView">
                 <div class="input-group">
-                    <label id="queryLabel">What scene do you need?</label>
+                    <label id="queryLabel">What video scene do you need?</label>
                     <input type="text" id="queryInput" placeholder="e.g. Man hiking in mountains 4k">
                 </div>
             </div>
@@ -418,19 +361,6 @@
         }
 
         // ==========================================
-        // DOCS PAGE
-        // ==========================================
-        function openDocs() {
-            closeSidebar();
-            document.getElementById('docsPage').classList.add('active');
-            lucide.createIcons();
-        }
-
-        function closeDocs() {
-            document.getElementById('docsPage').classList.remove('active');
-        }
-
-        // ==========================================
         // MODE SWITCH (Clips | Images | Script)
         // ==========================================
         function switchMode(m) {
@@ -490,7 +420,6 @@
                 return;
             }
 
-            // Input validation
             if (currentMode === 'search' || currentMode === 'images') {
                 const qVal = document.getElementById('queryInput').value.trim();
                 if (!qVal) {
@@ -667,7 +596,6 @@
                         </div>`;
                 });
 
-                // Next Page Quick Button for Images
                 const currentPage = parseInt(document.getElementById('imgPage').value || "0", 10);
                 if (currentPage < 3) {
                     container.innerHTML += `
