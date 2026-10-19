@@ -1,4 +1,4 @@
-const CACHE_NAME = 'scai-v2';
+const CACHE_NAME = 'scai-v16.3';
 const ASSETS = [
   '/',
   '/index.html',
