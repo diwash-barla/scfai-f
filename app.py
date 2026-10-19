@@ -27,27 +27,24 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 # ==========================================
 # 🚀 Lifespan (Global HTTP Client with Connection Pooling)
 # ==========================================
-# यह ग्लोबल क्लाइंट कनेक्शन्स को री-यूज़ करेगा, जिससे TCP हैंडशेक का टाइम बचेगा
 http_client: httpx.AsyncClient = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global http_client
 
-    # Startup Validation
     if not BACKEND_URL or "your-private-space" in BACKEND_URL:
         logger.warning("⚠️ BACKEND_URL is not properly configured. Proxy might fail!")
 
-    # Timeout 20s रखा है, क्योंकि HF Spaces को जागने (Cold start) में टाइम लगता है
     http_client = httpx.AsyncClient(timeout=20.0, limits=httpx.Limits(max_keepalive_connections=50))
     logger.info("✅ Global HTTPX Client Initialized")
 
-    yield  # यहाँ ऐप रन होती रहेगी
+    yield
 
-    # Shutdown Cleanup
     await http_client.aclose()
     logger.info("🛑 Global HTTPX Client Closed")
 
+# docs_url=None रखा है ताकि FastAPI का डिफ़ॉल्ट Swagger UI आपके कस्टम /docs राउट से न टकराए
 app = FastAPI(docs_url=None, redoc_url=None, lifespan=lifespan)
 
 # ==========================================
@@ -67,7 +64,6 @@ async def get_api_key(api_key: str = Security(api_key_header)):
 # 🔄 Proxy Helper Function (DRY Principle)
 # ==========================================
 async def forward_request(method: str, endpoint: str, payload: dict = None):
-    """सेंट्रल फंक्शन जो सारी HTTP रिक्वेस्ट्स को बैकएंड पर भेजेगा"""
     headers = {"Content-Type": "application/json"}
     if HF_TOKEN:
         headers["Authorization"] = f"Bearer {HF_TOKEN}"
@@ -100,6 +96,11 @@ async def forward_request(method: str, endpoint: str, payload: dict = None):
 async def read_root(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
+@app.get("/docs", response_class=HTMLResponse)
+async def read_docs(request: Request):
+    """🔥 Custom Documentation Page (templates/docs.html)"""
+    return templates.TemplateResponse(request=request, name="docs.html")
+
 @app.get("/manifest.json")
 async def serve_manifest():
     return FileResponse(os.path.join(BASE_DIR, "static/manifest.json"), media_type="application/manifest+json")
@@ -118,7 +119,7 @@ class SearchRequest(BaseModel):
 
 class ImageSearchRequest(BaseModel):
     query: str
-    orientation: str = "all"  # Supports: "all", "landscape" (16:9), "portrait" (9:16), "square" (1:1)
+    orientation: str = "all"
     page: int = 0
 
 class TimelineRequest(BaseModel):
@@ -132,7 +133,6 @@ async def proxy_search(request_data: SearchRequest, api_key: str = Depends(get_a
 
 @app.post("/api/images")
 async def proxy_images(request_data: ImageSearchRequest, api_key: str = Depends(get_api_key)):
-    """🔥 NEW: Real Internet Image Search Proxy (Spark-PicSearch + CLIP)"""
     return await forward_request("POST", "/api/images", request_data.model_dump())
 
 @app.post("/api/timeline")
